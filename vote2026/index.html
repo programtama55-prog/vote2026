@@ -48,7 +48,6 @@
             font-family: 'Noto Sans JP', sans-serif;
             background-color: #fffaf0; /* Soft warm background */
         }
-        /* Style adjustments for ruby tags to look modern and neat */
         ruby {
             ruby-position: over;
             ruby-align: center;
@@ -59,11 +58,9 @@
             padding-bottom: 0.1em;
             font-weight: 500;
         }
-        /* Furigana toggle state */
         body.hide-furigana rt {
             display: none !important;
         }
-        /* Custom kid-friendly buttons */
         .kid-btn-shadow {
             box-shadow: 0 6px 0 #cbd5e1;
             transform: translateY(-2px);
@@ -73,14 +70,6 @@
             box-shadow: 0 2px 0 #cbd5e1;
             transform: translateY(2px);
         }
-        /* Color overrides for active button state */
-        .kid-btn-shadow.active-blue {
-            box-shadow: 0 6px 0 #1d4ed8;
-        }
-        .kid-btn-shadow.active-blue:active {
-            box-shadow: 0 2px 0 #1d4ed8;
-        }
-        /* Pop effect for reactions */
         @keyframes floatEmoji {
             0% {
                 transform: translateY(0) scale(1);
@@ -115,7 +104,6 @@
     <header class="sticky top-0 z-30 bg-white/95 border-b-4 border-yellow-200 backdrop-blur-md">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
             <div class="flex items-center gap-3">
-                <!-- Mascot / Icon -->
                 <div class="w-12 h-12 rounded-2xl bg-kids-yellow flex items-center justify-center text-slate-800 shadow-md border-2 border-slate-800">
                     <span class="text-2xl font-bold tracking-tighter font-mono">🗳️</span>
                 </div>
@@ -149,26 +137,388 @@
     <!-- Main Container -->
     <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-        <!-- Navigation Tabs -->
-        <nav class="flex justify-center gap-4 mb-10">
-            <button id="tab-candidates" class="px-6 py-4 sm:px-8 rounded-2xl border-3 border-slate-800 bg-white text-base sm:text-lg font-black text-slate-800 shadow-[4px_4px_0_#1e293b] active:translate-x-0.5 active:translate-y-0.5 active:shadow-[2px_2px_0_#1e293b] transition-all flex items-center gap-2">
-                <i class="fa-solid fa-people-group text-kids-blue"></i>
-                <ruby>候補者<rt>こうほしゃ</rt></ruby>のリスト (P09)
+        <!-- Navigation Tabs (Covers P01-P03, P05-P08 & P09-P11) -->
+        <nav class="flex flex-wrap justify-center gap-3 sm:gap-4 mb-10">
+            <button id="tab-top" class="px-5 py-3.5 rounded-2xl border-3 border-slate-800 bg-white text-sm sm:text-base font-black text-slate-800 shadow-[3px_3px_0_#1e293b] active:translate-x-0.5 active:translate-y-0.5 transition-all flex items-center gap-2">
+                <i class="fa-solid fa-house text-kids-blue"></i>
+                <ruby>トップ<rt>とっぷ</rt></ruby> (P01)
             </button>
-            <button id="tab-comparison" class="px-6 py-4 sm:px-8 rounded-2xl border-3 border-slate-800 bg-white text-base sm:text-lg font-black text-slate-800 shadow-[4px_4px_0_#1e293b] active:translate-x-0.5 active:translate-y-0.5 active:shadow-[2px_2px_0_#1e293b] transition-all flex items-center gap-2">
+            <button id="tab-workshops" class="px-5 py-3.5 rounded-2xl border-3 border-slate-800 bg-white text-sm sm:text-base font-black text-slate-800 shadow-[3px_3px_0_#1e293b] active:translate-x-0.5 active:translate-y-0.5 transition-all flex items-center gap-2">
+                <i class="fa-solid fa-compass text-kids-green"></i>
+                <ruby>会議のきろく<rt>かいぎのきろく</rt></ruby> (P02)
+            </button>
+            <button id="tab-issues" class="px-5 py-3.5 rounded-2xl border-3 border-slate-800 bg-white text-sm sm:text-base font-black text-slate-800 shadow-[3px_3px_0_#1e293b] active:translate-x-0.5 active:translate-y-0.5 transition-all flex items-center gap-2">
+                <i class="fa-solid fa-map-location-dot text-kids-purple"></i>
+                <ruby>まちの課題<rt>まちのかだい</rt></ruby> (P03)
+            </button>
+            <button id="tab-official-questions" class="px-5 py-3.5 rounded-2xl border-3 border-slate-800 bg-white text-sm sm:text-base font-black text-slate-800 shadow-[3px_3px_0_#1e293b] active:translate-x-0.5 active:translate-y-0.5 transition-all flex items-center gap-2">
+                <i class="fa-solid fa-star text-kids-yellow"></i>
+                えらばれた<ruby>しつもん<rt>しつもん</rt></ruby> (P05)
+            </button>
+            <button id="tab-quiz" class="px-5 py-3.5 rounded-2xl border-3 border-slate-800 bg-white text-sm sm:text-base font-black text-slate-800 shadow-[3px_3px_0_#1e293b] active:translate-x-0.5 active:translate-y-0.5 transition-all flex items-center gap-2">
+                <i class="fa-solid fa-gamepad text-kids-red"></i>
+                えらびを<ruby>体験<rt>たいけん</rt></ruby>！ (P07)
+            </button>
+            <button id="tab-submit" class="px-5 py-3.5 rounded-2xl border-3 border-slate-800 bg-white text-sm sm:text-base font-black text-slate-800 shadow-[3px_3px_0_#1e293b] active:translate-x-0.5 active:translate-y-0.5 transition-all flex items-center gap-2">
+                <i class="fa-solid fa-paper-plane text-kids-mint"></i>
+                しつもんを<ruby>投稿<rt>とうこう</rt></ruby>する (P08)
+            </button>
+            <button id="tab-candidates" class="px-5 py-3.5 rounded-2xl border-3 border-slate-800 bg-white text-sm sm:text-base font-black text-slate-800 shadow-[3px_3px_0_#1e293b] active:translate-x-0.5 active:translate-y-0.5 transition-all flex items-center gap-2">
+                <i class="fa-solid fa-people-group text-kids-blue"></i>
+                <ruby>候補者リスト<rt>こうほしゃりすと</rt></ruby> (P09)
+            </button>
+            <button id="tab-comparison" class="px-5 py-3.5 rounded-2xl border-3 border-slate-800 bg-white text-sm sm:text-base font-black text-slate-800 shadow-[3px_3px_0_#1e293b] active:translate-x-0.5 active:translate-y-0.5 transition-all flex items-center gap-2">
                 <i class="fa-solid fa-scale-balanced text-kids-orange"></i>
-                <ruby>回答<rt>かいとう</rt></ruby>をくらべる (P10 & P11)
+                <ruby>意見くらべ<rt>いけんくらべ</rt></ruby> (P10-P11)
             </button>
         </nav>
 
-        <!-- Dynamic Election Overview Info Card -->
-        <div id="election-info-card" class="bg-white border-3 border-slate-800 rounded-3xl p-5 mb-8 shadow-[4px_4px_0_#1e293b] hidden">
-            <h2 id="election-info-title" class="text-lg font-black text-slate-900 mb-1 flex items-center gap-2"></h2>
-            <p id="election-info-desc" class="text-sm font-bold text-slate-600 leading-relaxed"></p>
+        <!-- Loader Indicator -->
+        <div id="section-loader" class="flex flex-col items-center justify-center py-12 space-y-3 hidden">
+            <i class="fa-solid fa-spinner text-4xl text-kids-blue animate-spin"></i>
+            <p class="text-sm font-bold text-slate-500">データを読みこんでいます...</p>
         </div>
 
+        <!-- ==================== P01: TOP VIEW ==================== -->
+        <section id="section-top" class="space-y-8 hidden">
+            <!-- Hero banner -->
+            <div class="bg-gradient-to-r from-kids-blue/80 via-kids-green/40 to-kids-yellow/50 border-4 border-slate-800 rounded-3xl p-6 sm:p-10 shadow-[6px_6px_0_#1e293b] flex flex-col md:flex-row items-center justify-between gap-6">
+                <div class="space-y-4 max-w-xl text-center md:text-left">
+                    <span class="inline-block px-3 py-1 rounded-full text-xs font-black bg-white border-2 border-slate-800 text-kids-orange">
+                        こどもたちの意見がつくるまち
+                    </span>
+                    <h2 id="top-election-title" class="text-2xl sm:text-4xl font-black text-slate-900 leading-tight">
+                        読みこみ中...
+                    </h2>
+                    <p id="top-election-desc" class="text-sm sm:text-base font-bold text-slate-700 leading-relaxed">
+                        こども選挙のポータルサイトです。
+                    </p>
+                </div>
+                <!-- Interactive status banner -->
+                <div class="bg-white border-3 border-slate-800 rounded-3xl p-6 shadow-[4px_4px_0_#000] text-center shrink-0 w-64">
+                    <span class="text-xs font-black text-slate-400 block uppercase tracking-widest mb-1.5">ELECTION STATUS</span>
+                    <div id="top-status-badge" class="px-4 py-2.5 rounded-2xl border-2 border-slate-800 text-white font-black text-base inline-block mb-3">
+                        確認中
+                    </div>
+                    <p id="top-status-text" class="text-xs font-bold text-slate-600 leading-relaxed">
+                        ステータスを取得しています。
+                    </p>
+                </div>
+            </div>
+
+            <!-- Steps Progress Timeline -->
+            <div class="bg-white border-3 border-slate-800 rounded-3xl p-6 sm:p-8 shadow-[4px_4px_0_#1e293b] space-y-6">
+                <div class="text-center md:text-left">
+                    <h3 class="text-xl font-black text-slate-900">
+                        🚶 <ruby>選挙<rt>せんきょ</rt></ruby>がすすむステップ
+                    </h3>
+                    <p class="text-xs sm:text-sm font-bold text-slate-500 mt-1">
+                        こども選挙がどんな順番ですすむか見てみよう！
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-4 relative">
+                    <!-- Step 1 -->
+                    <div id="step-card-1" class="border-2 border-slate-200 rounded-2xl p-4 text-center bg-slate-50/50 space-y-2">
+                        <span class="w-7 h-7 rounded-full bg-slate-300 text-white font-black text-sm inline-flex items-center justify-center">1</span>
+                        <h4 class="text-sm font-black text-slate-800"><ruby>話し合い<rt>はなしあい</rt></ruby></h4>
+                        <p class="text-[0.65rem] font-bold text-slate-500">ワークショップでまちの課題を見つけるよ！</p>
+                    </div>
+                    <!-- Step 2 -->
+                    <div id="step-card-2" class="border-2 border-slate-200 rounded-2xl p-4 text-center bg-slate-50/50 space-y-2">
+                        <span class="w-7 h-7 rounded-full bg-slate-300 text-white font-black text-sm inline-flex items-center justify-center">2</span>
+                        <h4 class="text-sm font-black text-slate-800"><ruby>質問づくり<rt>しつもんづくり</rt></ruby></h4>
+                        <p class="text-[0.65rem] font-bold text-slate-500">候補者に聞きたい大事な質問を決めるよ！</p>
+                    </div>
+                    <!-- Step 3 -->
+                    <div id="step-card-3" class="border-2 border-slate-200 rounded-2xl p-4 text-center bg-slate-50/50 space-y-2">
+                        <span class="w-7 h-7 rounded-full bg-slate-300 text-white font-black text-sm inline-flex items-center justify-center">3</span>
+                        <h4 class="text-sm font-black text-slate-800"><ruby>候補者の回答<rt>こうほしゃのこたえ</rt></ruby></h4>
+                        <p class="text-[0.65rem] font-bold text-slate-500">立候補した人が質問に答えてくれるよ！</p>
+                    </div>
+                    <!-- Step 4 -->
+                    <div id="step-card-4" class="border-2 border-slate-200 rounded-2xl p-4 text-center bg-slate-50/50 space-y-2">
+                        <span class="w-7 h-7 rounded-full bg-slate-300 text-white font-black text-sm inline-flex items-center justify-center">4</span>
+                        <h4 class="text-sm font-black text-slate-800"><ruby>みんなで投票<rt>みんなでとうひょう</rt></ruby></h4>
+                        <p class="text-[0.65rem] font-bold text-slate-500">いいなと思った候補者に投票するよ！</p>
+                    </div>
+                    <!-- Step 5 -->
+                    <div id="step-card-5" class="border-2 border-slate-200 rounded-2xl p-4 text-center bg-slate-50/50 space-y-2">
+                        <span class="w-7 h-7 rounded-full bg-slate-300 text-white font-black text-sm inline-flex items-center justify-center">5</span>
+                        <h4 class="text-sm font-black text-slate-800"><ruby>結果発表<rt>けっかはっぴょう</rt></ruby></h4>
+                        <p class="text-[0.65rem] font-bold text-slate-500">投票の結果と、これからのまちについて発表！</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Call to Actions -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white border-3 border-slate-800 rounded-3xl p-6 shadow-[4px_4px_0_#1e293b] flex gap-4 items-center">
+                    <div class="w-14 h-14 rounded-2xl bg-kids-green flex items-center justify-center text-3xl border-2 border-slate-800 shrink-0">🛠️</div>
+                    <div class="space-y-1">
+                        <h4 class="text-base font-black text-slate-900"><ruby>会議のきろくを見よう<rt>かいぎのきろくをみよう</rt></ruby></h4>
+                        <p class="text-xs font-bold text-slate-500">こどもたちがどんな風に話し合ったのか、過去の会議をのぞいてみよう！</p>
+                        <button onclick="document.getElementById('tab-workshops').click()" class="text-xs font-black text-kids-blue hover:underline pt-1 inline-block">きろくを見る →</button>
+                    </div>
+                </div>
+                <div class="bg-white border-3 border-slate-800 rounded-3xl p-6 shadow-[4px_4px_0_#1e293b] flex gap-4 items-center">
+                    <div class="w-14 h-14 rounded-2xl bg-kids-purple flex items-center justify-center text-3xl border-2 border-slate-800 shrink-0">🗺️</div>
+                    <div class="space-y-1">
+                        <h4 class="text-base font-black text-slate-900"><ruby>まちの課題を見よう<rt>まちのかだいをもっとみよう</rt></ruby></h4>
+                        <p class="text-xs font-bold text-slate-500">みんなが暮らすまちに、どんな「困りごと」や「アイデア」があるのかな？</p>
+                        <button onclick="document.getElementById('tab-issues').click()" class="text-xs font-black text-kids-purple hover:underline pt-1 inline-block">課題を見る →</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== P02: WORKSHOP ARCHIVE VIEW ==================== -->
+        <section id="section-workshops" class="space-y-8 hidden">
+            <div class="text-center space-y-2">
+                <h2 class="text-2xl sm:text-3xl font-black text-slate-900 flex items-center justify-center gap-2">
+                    🛠️ <ruby>会議<rt>かいぎ</rt></ruby>のきろく
+                </h2>
+                <p class="text-sm sm:text-base font-bold text-slate-600">
+                    こどもたちが集まって、まちの課題について話し合った「ワークショップ」のようすです。
+                </p>
+            </div>
+
+            <!-- Loader Indicator workshops -->
+            <div id="workshops-loader" class="flex flex-col items-center justify-center py-12 space-y-3 hidden">
+                <i class="fa-solid fa-spinner text-4xl text-kids-green animate-spin"></i>
+                <p class="text-sm font-bold text-slate-500">データをよみこんでいます...</p>
+            </div>
+
+            <!-- Workshops Timeline Container -->
+            <div id="workshops-container" class="space-y-8 max-w-4xl mx-auto">
+                <!-- Dynamically rendered timeline items -->
+            </div>
+        </section>
+
+        <!-- ==================== P03: LOCAL ISSUES VIEW ==================== -->
+        <section id="section-issues" class="space-y-8 hidden">
+            <div class="text-center space-y-2">
+                <h2 class="text-2xl sm:text-3xl font-black text-slate-900 flex items-center justify-center gap-2">
+                    🗺️ まちの<ruby>課題<rt>かだい</rt></ruby>一覧
+                </h2>
+                <p class="text-sm sm:text-base font-bold text-slate-600">
+                    こどもたちの話し合いから出てきた、まちの「困りごと」や「こうなったらいいな」という意見です。
+                </p>
+            </div>
+
+            <!-- Filters Bar & Search -->
+            <div class="bg-white rounded-3xl border-3 border-slate-800 shadow-[4px_4px_0_#1e293b] p-5 flex flex-col md:flex-row gap-4 items-center justify-between">
+                <!-- Search Box -->
+                <div class="relative w-full md:w-80">
+                    <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                    <input type="text" id="issue-search-input" placeholder="キーワードでさがす..." class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border-2 border-slate-300 rounded-2xl text-sm font-bold focus:outline-none focus:border-slate-800 focus:bg-white transition-all">
+                </div>
+
+                <!-- Categories Filter tabs -->
+                <div id="issue-category-filters" class="flex flex-wrap gap-2 w-full md:w-auto justify-start md:justify-end">
+                    <!-- Injected dynamically based on loaded issues categories -->
+                </div>
+            </div>
+
+            <!-- Loader Indicator issues -->
+            <div id="issues-loader" class="flex flex-col items-center justify-center py-12 space-y-3 hidden">
+                <i class="fa-solid fa-spinner text-4xl text-kids-purple animate-spin"></i>
+                <p class="text-sm font-bold text-slate-500">データをよみこんでいます...</p>
+            </div>
+
+            <!-- Issues Grid -->
+            <div id="issues-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Dynamically rendered issues cards -->
+            </div>
+        </section>
+
+        <!-- ==================== P05: OFFICIAL QUESTIONS LIST VIEW ==================== -->
+        <section id="section-official-questions" class="space-y-8 hidden">
+            <div class="text-center space-y-2">
+                <h2 class="text-2xl sm:text-3xl font-black text-slate-900 flex items-center justify-center gap-2">
+                    ⭐ こどもたちが<ruby>選<rt>えら</rt></ruby>んだ<ruby>質問<rt>しつもん</rt></ruby>
+                </h2>
+                <p class="text-sm sm:text-base font-bold text-slate-600">
+                    たくさんの「ききたいこと」の中から、みんなで話し合って選んだ「こうほしゃへの質問」です。どうしてその質問を選んだのかも読んでみよう！
+                </p>
+            </div>
+
+            <!-- Official Questions List -->
+            <div id="official-questions-list" class="space-y-6 max-w-4xl mx-auto">
+                <!-- Dynamically rendered question cards -->
+            </div>
+
+            <!-- Question Detail Modal (P06) -->
+            <div id="question-detail-modal" class="fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-200">
+                <div class="bg-white rounded-3xl border-4 border-slate-800 max-w-2xl w-full p-6 sm:p-8 transform scale-95 transition-transform duration-200 shadow-[8px_8px_0_#1e293b] relative max-h-[85vh] overflow-y-auto" id="question-detail-modal-content">
+                    <button id="question-modal-close" class="absolute top-4 right-4 text-slate-400 hover:text-slate-800 hover:bg-slate-100 p-2 rounded-full border-2 border-transparent hover:border-slate-800 transition-colors">
+                        <i class="fa-solid fa-xmark text-xl"></i>
+                    </button>
+                    <div id="question-detail-modal-body">
+                        <!-- Dynamic content -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== P07: QUIZ / SIMULATION VIEW ==================== -->
+        <section id="section-quiz" class="space-y-8 hidden">
+            <div class="text-center space-y-2">
+                <h2 class="text-2xl sm:text-3xl font-black text-slate-900 flex items-center justify-center gap-2">
+                    🎮 あなたならどれを<ruby>選ぶ<rt>えらぶ</rt></ruby>？
+                </h2>
+                <p class="text-sm sm:text-base font-bold text-slate-600">
+                    こどもたちが実際に行った「質問えらびのプロセス」を追体験してみよう！どの質問が一番大事だと思う？
+                </p>
+            </div>
+
+            <!-- Quiz container -->
+            <div id="quiz-container" class="max-w-3xl mx-auto space-y-6">
+                <!-- Dynamically rendered -->
+            </div>
+
+            <!-- Quiz Result Panel (hidden initially) -->
+            <div id="quiz-result" class="max-w-3xl mx-auto hidden">
+                <div class="bg-white border-4 border-kids-yellow rounded-3xl p-8 shadow-[6px_6px_0_#1e293b] text-center space-y-5">
+                    <div class="text-6xl">🏆</div>
+                    <h3 class="text-2xl font-black text-slate-900">
+                        あなたが<ruby>選んだ<rt>えらんだ</rt></ruby>しつもん！
+                    </h3>
+                    <div id="quiz-selected-question" class="bg-yellow-50 border-3 border-slate-800 rounded-2xl p-5 text-base font-black text-slate-900 leading-relaxed">
+                    </div>
+                    <p class="text-sm font-bold text-slate-600">
+                        こどもたちが<ruby>実際<rt>じっさい</rt></ruby>に選んだ質問と<ruby>比べて<rt>くらべて</rt></ruby>みよう！
+                    </p>
+                    <div class="flex flex-col sm:flex-row justify-center gap-3">
+                        <button id="quiz-retry-btn" class="px-6 py-3 rounded-2xl border-3 border-slate-800 bg-white font-black text-slate-800 shadow-[3px_3px_0_#000] hover:bg-slate-50 active:translate-y-0.5 transition-all">
+                            🔄 もう一度やってみる
+                        </button>
+                        <button onclick="document.getElementById('tab-official-questions').click()" class="px-6 py-3 rounded-2xl border-3 border-slate-800 bg-kids-yellow font-black text-slate-800 shadow-[3px_3px_0_#000] hover:bg-yellow-400 active:translate-y-0.5 transition-all">
+                            ⭐ みんなが選んだしつもんを見る
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== P08: QUESTION SUBMISSION FORM ==================== -->
+        <section id="section-submit" class="space-y-8 hidden">
+            <div class="text-center space-y-2">
+                <h2 class="text-2xl sm:text-3xl font-black text-slate-900 flex items-center justify-center gap-2">
+                    ✉️ しつもんを<ruby>投稿<rt>とうこう</rt></ruby>する
+                </h2>
+                <p class="text-sm sm:text-base font-bold text-slate-600">
+                    <ruby>候補者<rt>こうほしゃ</rt></ruby>に聞きたいことがあったら、ここから投稿できるよ！<br>
+                    <span class="text-xs font-bold text-slate-400">※投稿した質問は<ruby>担当者<rt>たんとうしゃ</rt></ruby>が確認してから公開されます（<ruby>承認制<rt>しょうにんせい</rt></ruby>）</span>
+                </p>
+            </div>
+
+            <div class="max-w-2xl mx-auto">
+                <!-- Rate limit / throttle notice -->
+                <div class="bg-blue-50 border-2 border-blue-200 rounded-2xl p-4 mb-6 flex items-start gap-3">
+                    <i class="fa-solid fa-circle-info text-blue-400 text-lg mt-0.5 shrink-0"></i>
+                    <div>
+                        <p class="text-xs sm:text-sm font-black text-blue-800">投稿のルール（大事なお約束）</p>
+                        <ul class="text-xs font-bold text-blue-700 mt-1 space-y-0.5 list-disc list-inside">
+                            <li>1回につき1つの質問だけ送れるよ（連続送信はできません）</li>
+                            <li>悪口や個人を傷つける内容は送れません</li>
+                            <li>投稿は担当スタッフが確認してから公開されます</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Submission Form -->
+                <div id="submit-form-container" class="bg-white border-3 border-slate-800 rounded-3xl p-6 sm:p-8 shadow-[4px_4px_0_#1e293b]">
+                    <form id="question-submit-form" class="space-y-5" novalidate>
+                        <!-- Nickname -->
+                        <div>
+                            <label for="submit-nickname" class="block text-sm font-black text-slate-800 mb-1.5">
+                                ニックネーム <span class="text-rose-500">*</span>
+                                <span class="text-xs font-bold text-slate-400 ml-1">（本名でなくてOK）</span>
+                            </label>
+                            <input type="text" id="submit-nickname" maxlength="20" placeholder="例：みらいくん、はなこ" required
+                                   class="w-full px-4 py-3 bg-slate-50 border-2 border-slate-300 rounded-2xl text-sm font-bold focus:outline-none focus:border-slate-800 focus:bg-white transition-all placeholder:text-slate-300">
+                            <p class="text-xs text-slate-400 font-bold mt-1">最大20文字</p>
+                        </div>
+
+                        <!-- Grade (optional) -->
+                        <div>
+                            <label for="submit-grade" class="block text-sm font-black text-slate-800 mb-1.5">
+                                <ruby>学年<rt>がくねん</rt></ruby>
+                                <span class="text-xs font-bold text-slate-400 ml-1">（任意・えらばなくてもOK）</span>
+                            </label>
+                            <select id="submit-grade"
+                                    class="w-full px-4 py-3 bg-slate-50 border-2 border-slate-300 rounded-2xl text-sm font-bold focus:outline-none focus:border-slate-800 cursor-pointer transition-all">
+                                <option value="">-- 学年を選ぶ（任意）--</option>
+                                <option value="小1">小学1年生</option>
+                                <option value="小2">小学2年生</option>
+                                <option value="小3">小学3年生</option>
+                                <option value="小4">小学4年生</option>
+                                <option value="小5">小学5年生</option>
+                                <option value="小6">小学6年生</option>
+                                <option value="中1">中学1年生</option>
+                                <option value="中2">中学2年生</option>
+                                <option value="中3">中学3年生</option>
+                                <option value="その他">その他</option>
+                            </select>
+                        </div>
+
+                        <!-- Question Content -->
+                        <div>
+                            <label for="submit-content" class="block text-sm font-black text-slate-800 mb-1.5">
+                                <ruby>候補者<rt>こうほしゃ</rt></ruby>へのしつもん <span class="text-rose-500">*</span>
+                            </label>
+                            <textarea id="submit-content" rows="4" maxlength="200" required
+                                      placeholder="例：まちの公園をもっと増やすためにどんな計画がありますか？"
+                                      class="w-full px-4 py-3 bg-slate-50 border-2 border-slate-300 rounded-2xl text-sm font-bold focus:outline-none focus:border-slate-800 focus:bg-white resize-none transition-all placeholder:text-slate-300"></textarea>
+                            <div class="flex justify-between items-center mt-1">
+                                <p class="text-xs font-bold text-slate-400">最大200文字</p>
+                                <p id="submit-content-count" class="text-xs font-bold text-slate-400">0 / 200</p>
+                            </div>
+                        </div>
+
+                        <!-- Reason -->
+                        <div>
+                            <label for="submit-reason" class="block text-sm font-black text-slate-800 mb-1.5">
+                                どうしてこの質問をしたいの？ <span class="text-rose-500">*</span>
+                            </label>
+                            <textarea id="submit-reason" rows="3" maxlength="150" required
+                                      placeholder="例：近くの公園が壊れていて遊べないので、新しくしてほしいと思ったから。"
+                                      class="w-full px-4 py-3 bg-slate-50 border-2 border-slate-300 rounded-2xl text-sm font-bold focus:outline-none focus:border-slate-800 focus:bg-white resize-none transition-all placeholder:text-slate-300"></textarea>
+                            <p class="text-xs font-bold text-slate-400 mt-1">最大150文字</p>
+                        </div>
+
+                        <!-- Error message area -->
+                        <div id="submit-error" class="hidden bg-rose-50 border-2 border-rose-200 rounded-2xl p-4 text-sm font-bold text-rose-700 flex items-center gap-2">
+                            <i class="fa-solid fa-circle-exclamation text-rose-500 shrink-0"></i>
+                            <span id="submit-error-text"></span>
+                        </div>
+
+                        <!-- Submit button (large for kids) -->
+                        <button type="submit" id="submit-btn"
+                                class="w-full py-4 rounded-2xl bg-kids-mint hover:bg-emerald-400 text-slate-800 font-black text-lg border-3 border-slate-800 shadow-[4px_4px_0_#000] active:translate-x-0.5 active:translate-y-0.5 active:shadow-[0_0_0_#000] transition-all flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-paper-plane"></i>
+                            しつもんを送る！
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Success message (shown after submission) -->
+                <div id="submit-success" class="hidden bg-white border-4 border-kids-mint rounded-3xl p-8 shadow-[4px_4px_0_#1e293b] text-center space-y-4">
+                    <div class="text-6xl">🎉</div>
+                    <h3 class="text-2xl font-black text-slate-900">しつもんを送ったよ！</h3>
+                    <p class="text-sm font-bold text-slate-600">
+                        担当スタッフが確認した後、公開されるよ。ありがとう！
+                    </p>
+                    <button id="submit-another-btn" class="px-6 py-3 rounded-2xl border-3 border-slate-800 bg-kids-yellow font-black text-slate-800 shadow-[3px_3px_0_#000] hover:bg-yellow-400 transition-all">
+                        もう1つ送る
+                    </button>
+                </div>
+            </div>
+        </section>
+
         <!-- ==================== P09: CANDIDATE LIST VIEW ==================== -->
-        <section id="section-candidates" class="space-y-8">
+        <section id="section-candidates" class="space-y-8 hidden">
             <div class="text-center space-y-2">
                 <h2 class="text-2xl sm:text-3xl font-black text-slate-900 flex items-center justify-center gap-2">
                     🎯 <ruby>候補者<rt>こうほしゃ</rt></ruby>のリスト
@@ -181,8 +531,8 @@
                 </div>
             </div>
 
-            <!-- Loader Indicator -->
-            <div id="candidates-loader" class="flex flex-col items-center justify-center py-12 space-y-3">
+            <!-- Loader Indicator candidates -->
+            <div id="candidates-loader" class="flex flex-col items-center justify-center py-12 space-y-3 hidden">
                 <i class="fa-solid fa-spinner text-4xl text-kids-blue animate-spin"></i>
                 <p class="text-sm font-bold text-slate-500">データを読みこんでいます...</p>
             </div>
