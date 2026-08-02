@@ -95,11 +95,9 @@ function initEventListeners() {
     if (state.furiganaEnabled) {
       document.body.classList.remove('hide-furigana');
       btnText.innerText = 'ふりがな を はずす';
-      showToast('ふりがな を つけました！', 'info');
     } else {
       document.body.classList.add('hide-furigana');
       btnText.innerText = 'ふりがな を つける';
-      showToast('ふりがな を はずしました！', 'info');
     }
   });
 
@@ -651,13 +649,6 @@ window.submitReaction = async function(answerId, type, btnElement) {
     counterSpan.innerText = state.reactions[answerId][type];
   }
 
-  const reactionEmojis = {
-    agree: '💡「なるほど」',
-    difficult: '🤔「むずかしい」',
-    more_info: '✨「もっと知りたい」'
-  };
-
-  showToast(`${reactionEmojis[type]} のきもちを 送（おく）ったよ！`, 'success');
 
   if (state.isMockData) {
     // デモモード時はDB保存をスキップ
