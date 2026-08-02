@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="ja" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>こども選挙 - 受付スタッフ管理画面 (S01〜S06)</title>
+    <meta name="description" content="こども選挙の受付スタッフ専用画面です。事前申込者の検索、当日参加者の新規登録、投票用紙の交付管理および二重交付防止制御を行います。">
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        staff: {
+                            primary: '#4f46e5', // Indigo 600
+                            primaryHover: '#4338ca',
+                            secondary: '#0ea5e9', // Sky 500
+                            success: '#10b981', // Emerald 500
+                            warning: '#f59e0b', // Amber 500
+                            danger: '#ef4444', // Red 500
+                            bg: '#f8fafc' // Slate 50
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'Noto Sans JP', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Google Fonts & Font Awesome Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+        }
+        /* Tap targets optimized for tablet use */
+        .tablet-btn {
+            min-height: 54px;
+        }
+    </style>
+
+    <!-- Import Map definition to allow module-based relative paths -->
+    <script type="importmap">
+        {
+            "imports": {
+                "@/lib/supabase.js": "./lib/supabase.js",
+                "@/lib/utils.js": "./lib/utils.js"
+            }
+        }
+    </script>
+</head>
+<body class="min-h-full flex flex-col text-slate-800 antialiased bg-slate-50">
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none flex flex-col items-center gap-2 max-w-sm w-full px-4"></div>
+
+    <!-- Header Navigation for Staff -->
+    <header class="sticky top-0 z-30 bg-white border-b-2 border-slate-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-md">
+                    <i class="fa-solid fa-users-gear text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-wider text-slate-900 flex items-center gap-2">
+                        こども選挙 <span class="text-xs px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 font-semibold border border-slate-300">受付管理 (S01-S06)</span>
+                    </h1>
+                    <p class="text-xs text-slate-500 font-bold">
+                        ※投票結果の閲覧権限はありません。受付および交付業務のみを行います。
+                    </p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <!-- Mode indicator: Mock or DB -->
+                <span id="mode-badge" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                    <i class="fa-solid fa-triangle-exclamation mr-1"></i>ロード中...
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+        <!-- S01: Dashboard Stats Overview -->
+        <section id="section-stats" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl shrink-0">
+                    <i class="fa-solid fa-id-card"></i>
+                </div>
+                <div>
+                    <p class="text-xs text-slate-500 font-bold">事前申込 登録者</p>
+                    <p id="stat-advance-registered" class="text-2xl font-black text-slate-800">0人</p>
+                </div>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center text-xl shrink-0">
+                    <i class="fa-solid fa-user-plus"></i>
+                </div>
+                <div>
+                    <p class="text-xs text-slate-500 font-bold">当日参加 登録者</p>
+                    <p id="stat-sameday-registered" class="text-2xl font-black text-slate-800">0人</p>
+                </div>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl shrink-0">
+                    <i class="fa-solid fa-ticket"></i>
+                </div>
+                <div>
+                    <p class="text-xs text-slate-500 font-bold">投票用紙 交付済数</p>
+                    <p id="stat-ballots-issued" class="text-2xl font-black text-slate-800">0人</p>
+                </div>
+            </div>
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-xl shrink-0">
+                    <i class="fa-solid fa-ban"></i>
+                </div>
+                <div>
+                    <p class="text-xs text-slate-500 font-bold">交付取消数</p>
+                    <p id="stat-ballots-revoked" class="text-2xl font-black text-slate-800">0人</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Operations split -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+            <!-- Left side: S02 Search & S03 Same-day Registrations -->
+            <div class="lg:col-span-1 space-y-6">
+
+                <!-- S02: Advance Registration Search (事前申込受付) -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                    <h2 class="text-lg font-black text-slate-900 flex items-center gap-2 border-b pb-3 border-slate-100">
+                        <span class="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center text-sm">
+                            <i class="fa-solid fa-magnifying-glass text-xs"></i>
+                        </span>
+                        S02: 事前申込者の受付
+                    </h2>
+                    
+                    <form id="search-form" class="space-y-3">
+                        <label for="search-reg-number" class="text-xs font-bold text-slate-500 block">
+                            受付番号 (例: ADV-1001 など)
+                        </label>
+                        <div class="flex gap-2">
+                            <input type="text" id="search-reg-number" placeholder="受付番号を入力..." 
+                                   class="flex-1 px-4 py-3 border border-slate-300 rounded-xl font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                            <button type="submit" class="px-5 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-all flex items-center gap-1.5 shadow-sm tablet-btn">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                                <span>検索</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- S03: Same-day Participant Registration (当日参加者登録) -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                    <h2 class="text-lg font-black text-slate-900 flex items-center gap-2 border-b pb-3 border-slate-100">
+                        <span class="w-7 h-7 rounded-lg bg-sky-500 text-white flex items-center justify-center text-sm">
+                            <i class="fa-solid fa-user-plus text-xs"></i>
+                        </span>
+                        S03: 当日参加者の登録
+                    </h2>
+
+                    <form id="register-form" class="space-y-4">
+                        <div class="space-y-1.5">
+                            <label for="register-age-group" class="text-xs font-bold text-slate-500 block">年齢区分 (Age Group)</label>
+                            <select id="register-age-group" required
+                                    class="w-full px-4 py-3 border border-slate-300 rounded-xl font-bold text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent">
+                                <option value="" disabled selected>-- 年齢を選択してください --</option>
+                                <option value="小学低学年">小学低学年 (1〜2年)</option>
+                                <option value="小学中学年">小学中学年 (3〜4年)</option>
+                                <option value="小学高学年">小学高学年 (5〜6年)</option>
+                                <option value="中学生">中学生</option>
+                                <option value="高校生">高校生</option>
+                                <option value="未就学児・その他">未就学児・その他</option>
+                            </select>
+                        </div>
+
+                        <div class="space-y-1.5">
+                            <label for="register-municipality" class="text-xs font-bold text-slate-500 block">お住まいの市町村 (Municipality)</label>
+                            <input type="text" id="register-municipality" placeholder="例: 〇〇市, 〇〇町" required
+                                   class="w-full px-4 py-3 border border-slate-300 rounded-xl font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent">
+                        </div>
+
+                        <button type="submit" class="w-full py-3.5 bg-sky-500 hover:bg-sky-600 text-white font-black rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5 tablet-btn">
+                            <i class="fa-solid fa-id-card-clip"></i>
+                            <span>登録して交付へ進む</span>
+                        </button>
+                    </form>
+                </div>
+
+            </div>
+
+            <!-- Right side: S04 Issue Details & S05 Action Forms -->
+            <div class="lg:col-span-2 space-y-6">
+
+                <!-- S04 & S05: Current Action Card (投票用紙交付・取消エリア) -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6" id="action-panel">
+                    <h2 class="text-lg font-black text-slate-900 flex items-center justify-between border-b pb-3 border-slate-100">
+                        <span class="flex items-center gap-2">
+                            <span class="w-7 h-7 rounded-lg bg-emerald-500 text-white flex items-center justify-center text-sm">
+                                <i class="fa-solid fa-ticket text-xs"></i>
+                            </span>
+                            S04 & S05: 交付・取消操作
+                        </span>
+                        <span id="active-status-badge" class="px-3 py-1 rounded-full text-xs font-black border hidden"></span>
+                    </h2>
+
+                    <!-- Empty selection state -->
+                    <div id="action-empty-state" class="py-16 text-center space-y-3">
+                        <div class="w-16 h-16 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center text-2xl mx-auto">
+                            <i class="fa-solid fa-user-check"></i>
+                        </div>
+                        <h3 class="text-base font-black text-slate-700">参加者が選択されていません</h3>
+                        <p class="text-xs text-slate-400 font-bold max-w-sm mx-auto">
+                            左側のフォームから事前申込者を検索するか、当日参加者の登録を行ってください。
+                        </p>
+                    </div>
+
+                    <!-- Active Registration Details Screen -->
+                    <div id="action-content" class="hidden space-y-6">
+                        
+                        <!-- Participant Details Panel -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                            <div>
+                                <span class="text-xs text-slate-400 font-bold">受付番号</span>
+                                <p id="panel-reg-number" class="text-xl font-extrabold text-slate-900 font-mono">-</p>
+                            </div>
+                            <div>
+                                <span class="text-xs text-slate-400 font-bold">区分</span>
+                                <p id="panel-is-advance" class="text-base font-bold text-slate-800">-</p>
+                            </div>
+                            <div>
+                                <span class="text-xs text-slate-400 font-bold">年齢区分</span>
+                                <p id="panel-age-group" class="text-base font-bold text-slate-800">-</p>
+                            </div>
+                            <div>
+                                <span class="text-xs text-slate-400 font-bold">市町村</span>
+                                <p id="panel-municipality" class="text-base font-bold text-slate-800">-</p>
+                            </div>
+                        </div>
+
+                        <!-- Double-issue Warning Panel (Visible only when status === 'ballot_issued') -->
+                        <div id="double-issue-warning" class="bg-rose-50 border-2 border-rose-300 rounded-xl p-5 hidden animate-pulse">
+                            <div class="flex items-start gap-3 text-rose-800">
+                                <i class="fa-solid fa-triangle-exclamation text-2xl shrink-0 mt-0.5"></i>
+                                <div class="space-y-1">
+                                    <h4 class="font-extrabold text-base">【警告】すでに交付済みです</h4>
+                                    <p class="text-xs font-bold text-rose-700 leading-relaxed">
+                                        この参加者にはすでに投票用紙が交付されています。投票用紙の二重交付は厳禁です。
+                                        交付作業はブロックされます。
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- S04 Action: Issue Ballot Button -->
+                        <div id="issue-action-box" class="space-y-3">
+                            <button id="btn-issue-ballot" class="w-full py-4 bg-emerald-500 hover:bg-emerald-600 disabled:bg-slate-300 text-white font-black text-lg rounded-xl transition-all shadow-md flex items-center justify-center gap-2 tablet-btn">
+                                <i class="fa-solid fa-check-double"></i>
+                                <span>投票用紙を交付する (S04)</span>
+                            </button>
+                        </div>
+
+                        <!-- S05 Action: Revoke Ballot Form (Visible if status is ballot_issued) -->
+                        <div id="revoke-action-box" class="border-t border-slate-200 pt-5 space-y-4 hidden">
+                            <h3 class="text-sm font-black text-rose-700 flex items-center gap-1.5">
+                                <i class="fa-solid fa-circle-exclamation"></i>
+                                誤操作による交付取消 (S05)
+                            </h3>
+                            
+                            <form id="revoke-form" class="space-y-3">
+                                <div class="space-y-1.5">
+                                    <label for="revoke-reason" class="text-xs font-bold text-slate-500 block">管理者取消理由（必須）</label>
+                                    <textarea id="revoke-reason" placeholder="例: 誤った受付番号を選択して交付ボタンを押してしまったため" required rows="2"
+                                              class="w-full px-4 py-3 border border-slate-300 rounded-xl font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent"></textarea>
+                                </div>
+                                <button type="submit" class="w-full py-3.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5 tablet-btn">
+                                    <i class="fa-solid fa-ban"></i>
+                                    <span>交付を取り消す</span>
+                                </button>
+                            </form>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- S06: Reception Logs / Activities -->
+        <section class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+            <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-2 border-b pb-3 border-slate-100">
+                <h2 class="text-lg font-black text-slate-900 flex items-center gap-2">
+                    <span class="w-7 h-7 rounded-lg bg-slate-800 text-white flex items-center justify-center text-sm font-mono">
+                        L
+                    </span>
+                    S06: 当日受付履歴ログ
+                </h2>
+                <div class="flex gap-2">
+                    <button id="btn-refresh-logs" class="px-4 py-2 border border-slate-300 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all flex items-center gap-1.5">
+                        <i class="fa-solid fa-rotate animate-spin-hover"></i>
+                        <span>履歴更新</span>
+                    </button>
+                    <button id="btn-clear-demo" class="px-4 py-2 border border-rose-300 rounded-lg text-xs font-bold text-rose-700 hover:bg-rose-50 transition-all flex items-center gap-1.5 hidden">
+                        <i class="fa-solid fa-trash-can"></i>
+                        <span>デモデータ初期化</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Logs table -->
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                    <thead>
+                        <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold text-xs uppercase">
+                            <th class="p-3">日時</th>
+                            <th class="p-3">受付番号</th>
+                            <th class="p-3">区分</th>
+                            <th class="p-3">年齢</th>
+                            <th class="p-3">市町村</th>
+                            <th class="p-3">ステータス</th>
+                            <th class="p-3 text-right">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logs-tbody" class="divide-y divide-slate-100 font-bold text-slate-700">
+                        <tr>
+                            <td colspan="7" class="p-8 text-center text-slate-400 text-xs">
+                                ログをロード中...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer for staff -->
+    <footer class="border-t border-slate-200 bg-white py-6 mt-12">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs font-bold text-slate-400">
+            <p>© 2026 こども選挙 事務局 受付管理システム</p>
+            <div class="flex gap-4">
+                <a href="./index.html" class="hover:text-indigo-600 transition-colors flex items-center gap-1">
+                    <i class="fa-solid fa-home"></i> こどもポータルへ戻る
+                </a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Modules Script -->
+    <script type="module" src="./reception.js"></script>
+</body>
+</html>
