@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kodomo-senkyo-v1';
+const CACHE_NAME = 'kodomo-senkyo-v2';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -33,9 +33,24 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  // HTTP/HTTPSリクエストのみを対象にする
+  if (!event.request.url.startsWith('http')) return;
+
   event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
-    })
+    fetch(event.request)
+      .then((response) => {
+        // 正常取得できればキャッシュを最新版に更新
+        if (response && response.status === 200 && response.type === 'basic') {
+          const responseToCache = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseToCache);
+          });
+        }
+        return response;
+      })
+      .catch(() => {
+        // オフライン等でネットワーク失敗した場合のみキャッシュから読み取る
+        return caches.match(event.request);
+      })
   );
 });
