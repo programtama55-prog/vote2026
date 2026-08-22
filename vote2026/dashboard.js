@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase.js';
 import { showToast } from '@/lib/utils.js';
+import { checkPageAccess, renderAuthHeaderWidget, ROLES } from '@/lib/auth.js';
 
 // --- アプリケーションの状態管理 (State) ---
 let state = {
@@ -24,6 +25,10 @@ const MOCK_REGISTRATIONS = [
 
 // --- 初期化処理 ---
 document.addEventListener('DOMContentLoaded', async () => {
+  const user = checkPageAccess([ROLES.UNEI, ROLES.ADMIN]);
+  if (!user) return;
+  renderAuthHeaderWidget('header-user-widget');
+
   checkSupabaseConnection();
   initEventListeners();
   await refreshDashboard();

@@ -69,7 +69,8 @@
         {
             "imports": {
                 "@/lib/supabase.js": "./lib/supabase.js",
-                "@/lib/utils.js": "./lib/utils.js"
+                "@/lib/utils.js": "./lib/utils.js",
+                "@/lib/auth.js": "./lib/auth.js"
             }
         }
     </script>
@@ -97,17 +98,12 @@
             </div>
 
             <div class="flex items-center gap-3">
-                <!-- Navigation shortcut links -->
-                <a href="./dashboard.html" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors flex items-center gap-1.5 border border-slate-200">
-                    <i class="fa-solid fa-chart-line text-indigo-500"></i>
-                    <span class="hidden md:inline">当日ダッシュボード</span>
-                </a>
-                
                 <!-- Mode indicator -->
                 <span id="mode-badge" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300 flex items-center gap-1">
                     <i class="fa-solid fa-triangle-exclamation"></i>
                     <span>ロード中...</span>
                 </span>
+                <div id="header-user-widget"></div>
             </div>
         </div>
     </header>

@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase.js';
 import { parseFurigana, shuffleArray, showToast, escapeHtml } from '@/lib/utils.js';
+import { renderAuthHeaderWidget } from '@/lib/auth.js';
 
 // --- アプリケーションの状態管理 (State) ---
 let state = {
@@ -156,6 +157,7 @@ const MOCK_GOVERNOR_POSTS = [
 
 // --- 初期化処理 (Initialization) ---
 document.addEventListener('DOMContentLoaded', async () => {
+  renderAuthHeaderWidget('index-auth-widget');
   initEventListeners();
   initGlobals();
   await loadElections();

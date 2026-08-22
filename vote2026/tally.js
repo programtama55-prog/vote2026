@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase.js';
 import { showToast, escapeHtml } from '@/lib/utils.js';
+import { checkPageAccess, renderAuthHeaderWidget, ROLES } from '@/lib/auth.js';
 
 // --- LocalStorage Keys ---
 const STORAGE_PREFIX = 'kodomo_senkyo_';
@@ -66,6 +67,10 @@ function setLocalData(key, value) {
 
 // --- 初期化処理 ---
 document.addEventListener('DOMContentLoaded', async () => {
+  const user = checkPageAccess([ROLES.KAIHYO, ROLES.ADMIN]);
+  if (!user) return;
+  renderAuthHeaderWidget('header-user-widget');
+
   checkSupabaseConnection();
   initEventListeners();
   await loadElections();

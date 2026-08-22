@@ -94,7 +94,8 @@
         {
             "imports": {
                 "@/lib/supabase.js": "./lib/supabase.js",
-                "@/lib/utils.js": "./lib/utils.js"
+                "@/lib/utils.js": "./lib/utils.js",
+                "@/lib/auth.js": "./lib/auth.js"
             }
         }
     </script>
@@ -123,7 +124,7 @@
                 </div>
             </div>
 
-            <!-- Global Controls: Furigana & Election Selector -->
+            <!-- Global Controls: Furigana & Election Selector & Staff Auth Widget -->
             <div class="flex items-center gap-2 sm:gap-3">
                 <!-- Furigana Switcher Button -->
                 <button id="furigana-toggle-btn" class="px-3.5 py-2 text-xs sm:text-sm font-black text-slate-800 bg-white rounded-xl border-2 border-slate-800 shadow-[2px_2px_0_#000] hover:bg-orange-50 active:translate-x-0.5 active:translate-y-0.5 active:shadow-[0_0_0_#000] transition-all flex items-center gap-1.5">
@@ -136,16 +137,11 @@
                     <option value="">-- 選挙をえらぶ --</option>
                 </select>
 
-                <!-- Admin / Staff Quick Links -->
-                <div class="hidden lg:flex items-center gap-1 pl-2 border-l-2 border-slate-200">
-                    <a href="./reception.html" title="受付管理画面 (Staff)" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 border-2 border-slate-800 text-slate-700 text-xs font-bold transition-all">
-                        <i class="fa-solid fa-user-check"></i> 受付
-                    </a>
-                    <a href="./tally.html" title="開票管理画面 (Tally)" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 border-2 border-slate-800 text-slate-700 text-xs font-bold transition-all">
-                        <i class="fa-solid fa-square-poll-vertical"></i> 開票
-                    </a>
-                    <a href="./dashboard.html" title="管理ダッシュボード (Admin)" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 border-2 border-slate-800 text-slate-700 text-xs font-bold transition-all">
-                        <i class="fa-solid fa-gauge-high"></i> 管理
+                <!-- Admin / Staff Auth Portal Widget -->
+                <div id="index-auth-widget" class="flex items-center gap-1 pl-2 border-l-2 border-slate-200">
+                    <a href="./login.html" title="スタッフログイン・管理" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition-all shadow-[2px_2px_0_#000] flex items-center gap-1.5">
+                        <i class="fa-solid fa-user-shield text-yellow-400"></i>
+                        <span class="hidden md:inline">スタッフログイン</span>
                     </a>
                 </div>
             </div>
