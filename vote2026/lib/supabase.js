@@ -4,7 +4,11 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 const supabaseUrl = window.SUPABASE_URL || 'https://your-supabase-project.supabase.co';
 const supabaseAnonKey = window.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.your-anon-key';
 
-if (supabaseUrl.includes('your-supabase-project')) {
+export function isSupabaseConfigured() {
+  return supabaseUrl && !supabaseUrl.includes('your-supabase-project') && supabaseAnonKey && !supabaseAnonKey.includes('your-anon-key');
+}
+
+if (!isSupabaseConfigured()) {
   console.warn('こども選挙: SupabaseのURLとAnon Keyがデフォルトのままです。実際のDBと連携する場合は、window.SUPABASE_URL および window.SUPABASE_ANON_KEY を設定するか、supabase.js 内の変数を書き換えてください。');
 }
 

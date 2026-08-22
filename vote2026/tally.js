@@ -67,7 +67,7 @@ function setLocalData(key, value) {
 
 // --- 初期化処理 ---
 document.addEventListener('DOMContentLoaded', async () => {
-  const user = checkPageAccess([ROLES.KAIHYO, ROLES.ADMIN]);
+  const user = await checkPageAccess([ROLES.KAIHYO, ROLES.ADMIN]);
   if (!user) return;
   renderAuthHeaderWidget('header-user-widget');
 

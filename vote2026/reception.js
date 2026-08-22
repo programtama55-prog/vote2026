@@ -30,7 +30,7 @@ let mockDatabase = {
 
 // --- 初期化処理 ---
 document.addEventListener('DOMContentLoaded', async () => {
-  const user = checkPageAccess([ROLES.UNEI, ROLES.ADMIN]);
+  const user = await checkPageAccess([ROLES.UNEI, ROLES.ADMIN]);
   if (!user) return;
   renderAuthHeaderWidget('header-user-widget');
 

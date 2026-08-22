@@ -100,13 +100,13 @@ function initEventListeners() {
 
   // 通常ログインフォーム
   const loginForm = document.getElementById('login-form');
-  loginForm.addEventListener('submit', (e) => {
+  loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const username = document.getElementById('username').value;
     const password = document.getElementById('password').value;
     const remember = document.getElementById('remember-me').checked;
 
-    const res = login(username, password, remember);
+    const res = await login(username, password, remember);
     if (res.success) {
       showToast(`ようこそ、${res.user.name}さん (${res.user.role})`, 'success');
       redirectAfterLogin(res.user.role);
@@ -118,7 +118,7 @@ function initEventListeners() {
   // サインアップ (新規アカウント登録) フォーム
   const signupForm = document.getElementById('signup-form');
   if (signupForm) {
-    signupForm.addEventListener('submit', (e) => {
+    signupForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const username = document.getElementById('signup-username').value;
       const name = document.getElementById('signup-name').value;
@@ -126,7 +126,7 @@ function initEventListeners() {
       const password = document.getElementById('signup-password').value;
       const confirmPassword = document.getElementById('signup-confirm-password').value;
 
-      const res = signUp({ username, name, role, password, confirmPassword, autoLogin: true });
+      const res = await signUp({ username, name, role, password, confirmPassword, autoLogin: true });
       if (res.success) {
         showToast(`アカウント「${name}」を登録しました。役職【${role}】でログイン中。`, 'success');
         renderAccountsTable();
@@ -252,10 +252,10 @@ function renderAccountsTable() {
 
   // 役職変更イベント付与
   tbody.querySelectorAll('.role-select').forEach(select => {
-    select.addEventListener('change', (e) => {
+    select.addEventListener('change', async (e) => {
       const username = e.target.getAttribute('data-username');
       const newRole = e.target.value;
-      const res = updateAccountRole(username, newRole);
+      const res = await updateAccountRole(username, newRole);
       if (res.success) {
         showToast(`ユーザー ${username} の役職を【${newRole}】に変更しました。`, 'success');
         renderAccountsTable();
