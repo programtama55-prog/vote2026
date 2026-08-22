@@ -12,6 +12,7 @@ import {
   getRoleBadgeHtml, 
   ROLES 
 } from '@/lib/auth.js';
+import { setSupabaseConfig, clearSupabaseConfig, getSupabaseUrl, getSupabaseAnonKey, isSupabaseConfigured } from '@/lib/supabase.js';
 import { showToast, escapeHtml } from '@/lib/utils.js';
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -98,6 +99,42 @@ function initEventListeners() {
   document.getElementById('link-to-signup')?.addEventListener('click', () => switchFormTab('signup'));
   document.getElementById('link-to-login')?.addEventListener('click', () => switchFormTab('login'));
 
+  // Supabase設定モーダル
+  const modal = document.getElementById('supabase-config-modal');
+  const btnOpenModal = document.getElementById('btn-open-supabase-config');
+  const btnCloseModal = document.getElementById('btn-close-supabase-config');
+  const cfgForm = document.getElementById('supabase-config-form');
+  const btnClearConfig = document.getElementById('btn-clear-supabase-config');
+
+  if (btnOpenModal && modal) {
+    btnOpenModal.addEventListener('click', () => {
+      document.getElementById('cfg-supabase-url').value = isSupabaseConfigured() ? getSupabaseUrl() : '';
+      document.getElementById('cfg-supabase-key').value = isSupabaseConfigured() ? getSupabaseAnonKey() : '';
+      modal.classList.remove('hidden');
+    });
+  }
+
+  if (btnCloseModal && modal) {
+    btnCloseModal.addEventListener('click', () => modal.classList.add('hidden'));
+  }
+
+  if (cfgForm) {
+    cfgForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const url = document.getElementById('cfg-supabase-url').value;
+      const key = document.getElementById('cfg-supabase-key').value;
+      setSupabaseConfig(url, key);
+    });
+  }
+
+  if (btnClearConfig) {
+    btnClearConfig.addEventListener('click', () => {
+      if (confirm('Supabase接続設定をクリアしてデモ表示モードに戻しますか？')) {
+        clearSupabaseConfig();
+      }
+    });
+  }
+
   // 通常ログインフォーム
   const loginForm = document.getElementById('login-form');
   loginForm.addEventListener('submit', async (e) => {
@@ -122,11 +159,12 @@ function initEventListeners() {
       e.preventDefault();
       const username = document.getElementById('signup-username').value;
       const name = document.getElementById('signup-name').value;
+      const email = document.getElementById('signup-email')?.value || '';
       const role = document.getElementById('signup-role').value;
       const password = document.getElementById('signup-password').value;
       const confirmPassword = document.getElementById('signup-confirm-password').value;
 
-      const res = await signUp({ username, name, role, password, confirmPassword, autoLogin: true });
+      const res = await signUp({ username, email, name, role, password, confirmPassword, autoLogin: true });
       if (res.success) {
         showToast(`アカウント「${name}」を登録しました。役職【${role}】でログイン中。`, 'success');
         renderAccountsTable();
@@ -158,22 +196,24 @@ function initEventListeners() {
 
   // アカウント追加フォーム (管理者機能)
   const addForm = document.getElementById('add-account-form');
-  addForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const username = document.getElementById('new-username').value;
-    const name = document.getElementById('new-name').value;
-    const role = document.getElementById('new-role').value;
-    const password = document.getElementById('new-password').value;
+  if (addForm) {
+    addForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = document.getElementById('new-username').value;
+      const name = document.getElementById('new-name').value;
+      const role = document.getElementById('new-role').value;
+      const password = document.getElementById('new-password').value;
 
-    const res = addAccount({ username, name, role, password });
-    if (res.success) {
-      showToast(`アカウント 「${name}」 に役職【${role}】を付与して追加しました。`, 'success');
-      addForm.reset();
-      renderAccountsTable();
-    } else {
-      showToast(res.message, 'error');
-    }
-  });
+      const res = await addAccount({ username, name, role, password });
+      if (res.success) {
+        showToast(`アカウント 「${name}」 に役職【${role}】を付与して追加しました。`, 'success');
+        addForm.reset();
+        await renderAccountsTable();
+      } else {
+        showToast(res.message, 'error');
+      }
+    });
+  }
 }
 
 // ログイン成功後の適正画面への遷移制御
@@ -206,14 +246,14 @@ function redirectAfterLogin(role) {
 }
 
 // アカウント＆役職管理テーブルの描画
-function renderAccountsTable() {
+async function renderAccountsTable() {
   const tbody = document.getElementById('accounts-table-body');
   if (!tbody) return;
 
-  const accounts = getAccounts();
+  const accounts = await getAccounts();
   const currentUser = getCurrentUser();
 
-  if (accounts.length === 0) {
+  if (!accounts || accounts.length === 0) {
     tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-500">アカウントが登録されていません</td></tr>`;
     return;
   }
@@ -258,7 +298,7 @@ function renderAccountsTable() {
       const res = await updateAccountRole(username, newRole);
       if (res.success) {
         showToast(`ユーザー ${username} の役職を【${newRole}】に変更しました。`, 'success');
-        renderAccountsTable();
+        await renderAccountsTable();
         refreshSessionBanner();
         renderAuthHeaderWidget('header-user-widget');
       } else {
@@ -269,13 +309,13 @@ function renderAccountsTable() {
 
   // 削除イベント付与
   tbody.querySelectorAll('.btn-delete-account').forEach(btn => {
-    btn.addEventListener('click', (e) => {
+    btn.addEventListener('click', async (e) => {
       const username = e.currentTarget.getAttribute('data-username');
       if (confirm(`本当にアカウント 「${username}」 を削除しますか？`)) {
-        const res = deleteAccount(username);
+        const res = await deleteAccount(username);
         if (res.success) {
           showToast(`アカウント ${username} を削除しました。`, 'info');
-          renderAccountsTable();
+          await renderAccountsTable();
         } else {
           showToast(res.message, 'error');
         }
@@ -283,3 +323,4 @@ function renderAccountsTable() {
     });
   });
 }
+

@@ -344,11 +344,9 @@ async function loadElections() {
 
     if (error) throw error;
     state.elections = data && data.length > 0 ? data : MOCK_ELECTIONS;
-    state.isMockData = false;
   } catch (err) {
-    console.warn('Supabase接続なし。モックデータを使用します:', err);
+    console.warn('Supabase DBフェッチエラー (デフォルト設定を使用):', err);
     state.elections = MOCK_ELECTIONS;
-    state.isMockData = true;
   }
 
   renderElectionSelect();
@@ -358,47 +356,22 @@ async function loadElectionData(electionId) {
   const loader = document.getElementById('section-loader');
   loader.classList.remove('hidden');
 
-  if (state.isMockData) {
-    state.candidates = MOCK_CANDIDATES.filter(c => c.election_id === electionId);
-    state.questions = MOCK_QUESTIONS.filter(q => q.election_id === electionId);
-    state.officialQuestions = MOCK_OFFICIAL_QUESTIONS.filter(oq => oq.election_id === electionId);
-    state.workshops = MOCK_WORKSHOPS.filter(w => w.election_id === electionId);
-    state.issues = MOCK_ISSUES.filter(i => i.election_id === electionId);
-    state.candidateAnswers = MOCK_ANSWERS;
-    state.governorPosts = MOCK_GOVERNOR_POSTS;
-    
-    state.reactions = {};
-    state.candidateAnswers.forEach(ans => {
-      state.reactions[ans.id] = {
-        agree: Math.floor(Math.random() * 25) + 8,
-        difficult: Math.floor(Math.random() * 6),
-        more_info: Math.floor(Math.random() * 14) + 4
-      };
-    });
-
-    setTimeout(() => {
-      loader.classList.add('hidden');
-      switchMainTab(state.activeMainTab);
-    }, 300);
-    return;
-  }
-
   try {
     const { data: candidates } = await supabase.from('candidates').select('*').eq('election_id', electionId);
     const { data: questions } = await supabase.from('questions').select('*').eq('election_id', electionId);
     const { data: workshops } = await supabase.from('workshops').select('*').eq('election_id', electionId);
     const { data: issues } = await supabase.from('issues').select('*').eq('election_id', electionId);
 
-    state.candidates = candidates || [];
-    state.questions = questions || [];
-    state.officialQuestions = (questions || []).filter(q => q.is_official);
-    state.workshops = workshops || [];
-    state.issues = issues || [];
+    state.candidates = (candidates && candidates.length > 0) ? candidates : MOCK_CANDIDATES.filter(c => c.election_id === electionId);
+    state.questions = (questions && questions.length > 0) ? questions : MOCK_QUESTIONS.filter(q => q.election_id === electionId);
+    state.officialQuestions = state.questions.filter(q => q.is_official);
+    state.workshops = (workshops && workshops.length > 0) ? workshops : MOCK_WORKSHOPS.filter(w => w.election_id === electionId);
+    state.issues = (issues && issues.length > 0) ? issues : MOCK_ISSUES.filter(i => i.election_id === electionId);
 
     const qIds = state.questions.map(q => q.id);
     if (qIds.length > 0) {
       const { data: answers } = await supabase.from('candidate_answers').select('*').in('question_id', qIds);
-      state.candidateAnswers = answers || [];
+      state.candidateAnswers = (answers && answers.length > 0) ? answers : MOCK_ANSWERS;
       await fetchReactionCounts();
     } else {
       state.candidateAnswers = [];

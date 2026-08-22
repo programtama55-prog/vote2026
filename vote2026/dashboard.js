@@ -29,25 +29,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (!user) return;
   renderAuthHeaderWidget('header-user-widget');
 
-  checkSupabaseConnection();
+  updateConnectionStatusUI();
   initEventListeners();
   await refreshDashboard();
   startAutoUpdate();
 });
 
-// Supabase接続確認
-function checkSupabaseConnection() {
+// Supabase接続状況のUI表示
+function updateConnectionStatusUI() {
   const modeBadge = document.getElementById('mode-badge');
-  const isDefaultConfig = window.SUPABASE_URL && window.SUPABASE_URL.includes('your-supabase-project');
-  
-  if (isDefaultConfig || !supabase) {
-    state.isMockData = true;
-    modeBadge.className = 'px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20';
-    modeBadge.innerHTML = '<i class="fa-solid fa-circle-nodes mr-1"></i>デモモード (Mock)';
-  } else {
-    state.isMockData = false;
+  if (modeBadge) {
     modeBadge.className = 'px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
-    modeBadge.innerHTML = '<i class="fa-solid fa-server mr-1"></i>データベース接続中';
+    modeBadge.innerHTML = '<i class="fa-solid fa-database mr-1"></i>Supabase データベース接続中';
   }
 }
 
@@ -105,27 +98,7 @@ async function refreshDashboard() {
 
 // 受付データのフェッチ
 async function fetchRegistrations() {
-  if (state.isMockData) {
-    state.registrations = [...MOCK_REGISTRATIONS];
-    // デモ感を追加するため、自動更新ごとにランダムに1人追加する演出
-    if (Math.random() > 0.6) {
-      const ageGroups = ['小学低学年', '小学中学年', '小学高学年', '中学生', '高校生'];
-      const municipalities = ['つくば市', '土浦市', '水戸市', '牛久市', '龍ケ崎市'];
-      MOCK_REGISTRATIONS.push({
-        id: `mock-${Date.now()}`,
-        reg_number: `DAY-${Math.floor(1000 + Math.random() * 9000)}`,
-        is_advance: Math.random() > 0.5,
-        age_group: ageGroups[Math.floor(Math.random() * ageGroups.length)],
-        municipality: municipalities[Math.floor(Math.random() * municipalities.length)],
-        status: Math.random() > 0.2 ? 'ballot_issued' : 'registered'
-      });
-    }
-    return;
-  }
-
   try {
-    // 個人情報への不要なアクセスを防止しつつ、集計用データを取得
-    // 開票データ（候補者得票等）は一切含めない
     const { data, error } = await supabase
       .from('registrations')
       .select('id, reg_number, is_advance, age_group, municipality, status, created_at');

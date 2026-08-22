@@ -12,20 +12,6 @@ let state = {
     ballotsRevoked: 0
   },
   logs: [], // 最近の受付履歴
-  isMockData: false
-};
-
-// --- モック用のインメモリデータベース (Supabase接続失敗時のフォールバック用) ---
-let mockDatabase = {
-  registrations: [
-    { id: 'mock-reg-1', reg_number: 'ADV-1001', is_advance: true, age_group: '小学高学年', municipality: 'つくば市', status: 'registered' },
-    { id: 'mock-reg-2', reg_number: 'ADV-1002', is_advance: true, age_group: '中学生', municipality: '土浦市', status: 'ballot_issued' },
-    { id: 'mock-reg-3', reg_number: 'ADV-1003', is_advance: true, age_group: '小学低学年', municipality: '水戸市', status: 'registered' },
-    { id: 'mock-reg-4', reg_number: 'ADV-1004', is_advance: true, age_group: '高校生', municipality: 'つくば市', status: 'registered' }
-  ],
-  ballot_issues: [
-    { id: 'mock-bi-1', registration_id: 'mock-reg-2', issued_at: new Date(Date.now() - 30 * 60000).toISOString(), staff_id: 'staff-01', is_revoked: false, revoke_reason: null }
-  ]
 };
 
 // --- 初期化処理 ---
@@ -34,28 +20,20 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (!user) return;
   renderAuthHeaderWidget('header-user-widget');
 
-  checkSupabaseConnection();
+  updateConnectionStatusUI();
   initEventListeners();
   await refreshData();
 });
 
-// Supabase接続確認とモード切替
-function checkSupabaseConnection() {
+// Supabase接続状況のUI表示
+function updateConnectionStatusUI() {
   const modeBadge = document.getElementById('mode-badge');
-  const isDefaultConfig = window.SUPABASE_URL && window.SUPABASE_URL.includes('your-supabase-project');
-  
-  if (isDefaultConfig || !supabase) {
-    state.isMockData = true;
-    modeBadge.className = 'px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300';
-    modeBadge.innerHTML = '<i class="fa-solid fa-circle-nodes mr-1"></i>デモモード (Mock)';
-    console.log('こども選挙: デモ用モックデータモードで実行します。');
-    document.getElementById('btn-clear-demo').classList.remove('hidden');
-  } else {
-    state.isMockData = false;
+  if (modeBadge) {
     modeBadge.className = 'px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300';
-    modeBadge.innerHTML = '<i class="fa-solid fa-server mr-1"></i>データベース接続中';
+    modeBadge.innerHTML = '<i class="fa-solid fa-database mr-1"></i>Supabase データベース接続中';
   }
 }
+
 
 // イベントリスナー登録
 function initEventListeners() {
@@ -145,22 +123,6 @@ async function refreshData() {
 
 // --- 統計情報の読み込み (S01) ---
 async function loadStats() {
-  if (state.isMockData) {
-    const advance = mockDatabase.registrations.filter(r => r.is_advance).length;
-    const sameday = mockDatabase.registrations.filter(r => !r.is_advance).length;
-    const issued = mockDatabase.registrations.filter(r => r.status === 'ballot_issued').length;
-    const revoked = mockDatabase.ballot_issues.filter(bi => bi.is_revoked).length;
-
-    state.stats = {
-      advanceRegistered: advance,
-      samedayRegistered: sameday,
-      ballotsIssued: issued,
-      ballotsRevoked: revoked
-    };
-    renderStats();
-    return;
-  }
-
   try {
     const { count: advanceCount, error: err1 } = await supabase
       .from('registrations')
@@ -207,21 +169,6 @@ function renderStats() {
 
 // --- 事前申込者検索 (S02) ---
 async function searchAdvanceParticipant(regNumber) {
-  if (state.isMockData) {
-    const match = mockDatabase.registrations.find(
-      r => r.reg_number.toUpperCase() === regNumber.toUpperCase() && r.is_advance
-    );
-    
-    if (match) {
-      state.activeRegistration = { ...match };
-      renderActivePanel();
-      showToast(`「${regNumber}」が見つかりました。`, 'success');
-    } else {
-      showToast(`「${regNumber}」に該当する事前登録者は見つかりません。`, 'error');
-    }
-    return;
-  }
-
   try {
     const { data, error } = await supabase
       .from('registrations')
@@ -248,26 +195,6 @@ async function searchAdvanceParticipant(regNumber) {
 // --- 当日参加者登録 (S03) ---
 async function registerSameDayParticipant(ageGroup, municipality) {
   const regNumber = `DAY-${Math.floor(1000 + Math.random() * 9000)}`;
-
-  if (state.isMockData) {
-    const newReg = {
-      id: `mock-reg-${Date.now()}`,
-      reg_number: regNumber,
-      is_advance: false,
-      age_group: ageGroup,
-      municipality: municipality,
-      status: 'registered'
-    };
-
-    mockDatabase.registrations.push(newReg);
-    state.activeRegistration = { ...newReg };
-    
-    document.getElementById('register-form').reset();
-    renderActivePanel();
-    await refreshData();
-    showToast(`当日登録に成功しました。受付番号: ${regNumber}`, 'success');
-    return;
-  }
 
   try {
     const { data, error } = await supabase
@@ -301,31 +228,6 @@ async function issueBallot(registration) {
   if (registration.status === 'ballot_issued') {
     alert('【警告】この参加者はすでに投票用紙が交付されています！二重交付は固く禁止されています。');
     showToast('交付処理はブロックされました。', 'error');
-    return;
-  }
-
-  if (state.isMockData) {
-    // mockDatabase の登録情報を更新
-    const regIdx = mockDatabase.registrations.findIndex(r => r.id === registration.id);
-    if (regIdx !== -1) {
-      mockDatabase.registrations[regIdx].status = 'ballot_issued';
-      state.activeRegistration = { ...mockDatabase.registrations[regIdx] };
-    }
-
-    // ballot_issues への挿入
-    const newIssue = {
-      id: `mock-bi-${Date.now()}`,
-      registration_id: registration.id,
-      issued_at: new Date().toISOString(),
-      staff_id: 'staff-01',
-      is_revoked: false,
-      revoke_reason: null
-    };
-    mockDatabase.ballot_issues.push(newIssue);
-
-    renderActivePanel();
-    await refreshData();
-    showToast('投票用紙を交付しました。', 'success');
     return;
   }
 
@@ -364,30 +266,6 @@ async function issueBallot(registration) {
 
 // --- 誤操作による交付取消 (S05) ---
 async function revokeBallot(registrationId, reason) {
-  if (state.isMockData) {
-    // registrations の更新
-    const regIdx = mockDatabase.registrations.findIndex(r => r.id === registrationId);
-    if (regIdx !== -1) {
-      mockDatabase.registrations[regIdx].status = 'registered';
-      state.activeRegistration = { ...mockDatabase.registrations[regIdx] };
-    }
-
-    // ballot_issues の取消更新
-    const issueIdx = mockDatabase.ballot_issues.findIndex(
-      bi => bi.registration_id === registrationId && !bi.is_revoked
-    );
-    if (issueIdx !== -1) {
-      mockDatabase.ballot_issues[issueIdx].is_revoked = true;
-      mockDatabase.ballot_issues[issueIdx].revoke_reason = reason;
-    }
-
-    document.getElementById('revoke-reason').value = '';
-    renderActivePanel();
-    await refreshData();
-    showToast('交付を取り消しました。', 'success');
-    return;
-  }
-
   try {
     // 1. ballot_issues の is_revoked, revoke_reason を更新
     const { error: issueErr } = await supabase
@@ -473,28 +351,6 @@ function renderActivePanel() {
 async function loadLogs() {
   const tbody = document.getElementById('logs-tbody');
 
-  if (state.isMockData) {
-    // mockのログ結合処理
-    const joinedLogs = mockDatabase.registrations.map(reg => {
-      const issue = mockDatabase.ballot_issues.find(bi => bi.registration_id === reg.id);
-      return {
-        ...reg,
-        issued_at: issue ? issue.issued_at : null,
-        is_revoked: issue ? issue.is_revoked : false,
-        revoke_reason: issue ? issue.revoke_reason : null
-      };
-    }).sort((a, b) => {
-      // 交付日時またはid順でソート
-      const dateA = a.issued_at || '';
-      const dateB = b.issued_at || '';
-      return dateB.localeCompare(dateA);
-    });
-
-    state.logs = joinedLogs;
-    renderLogs();
-    return;
-  }
-
   try {
     // registrations と ballot_issues を結合して直近20件を取得
     const { data, error } = await supabase
@@ -506,8 +362,7 @@ async function loadLogs() {
     if (error) throw error;
 
     // データ平坦化
-    state.logs = data.map(item => {
-      // ballot_issues は配列で返ってくるため、最新のものを取得
+    state.logs = (data || []).map(item => {
       const issues = item.ballot_issues || [];
       const latestIssue = issues.length > 0 ? issues[issues.length - 1] : null;
       return {

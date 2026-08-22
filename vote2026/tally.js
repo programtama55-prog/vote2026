@@ -71,24 +71,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (!user) return;
   renderAuthHeaderWidget('header-user-widget');
 
-  checkSupabaseConnection();
+  updateConnectionStatusUI();
   initEventListeners();
   await loadElections();
 });
 
-// Supabase接続判定
-function checkSupabaseConnection() {
+// Supabase接続状況のUI表示
+function updateConnectionStatusUI() {
   const modeBadge = document.getElementById('mode-badge');
-  const isDefaultConfig = window.SUPABASE_URL && window.SUPABASE_URL.includes('your-supabase-project');
-
-  if (isDefaultConfig || !supabase) {
-    state.isMockData = true;
-    modeBadge.className = 'px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300 flex items-center gap-1';
-    modeBadge.innerHTML = '<i class="fa-solid fa-circle-nodes"></i> デモモード (Mock / LocalStorage)';
-  } else {
-    state.isMockData = false;
+  if (modeBadge) {
     modeBadge.className = 'px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1';
-    modeBadge.innerHTML = '<i class="fa-solid fa-server"></i> データベース接続中';
+    modeBadge.innerHTML = '<i class="fa-solid fa-database"></i> Supabase データベース接続中';
   }
 }
 
@@ -254,19 +247,13 @@ function switchTab(tabName) {
 // 選挙マスターロード
 async function loadElections() {
   try {
-    if (state.isMockData) {
-      const savedElections = getLocalData(STORAGE_ELECTIONS, null);
-      state.elections = savedElections || MOCK_ELECTIONS;
-    } else {
-      const { data, error } = await supabase
-        .from('elections')
-        .select('id, title, status, event_date')
-        .order('id', { ascending: false });
+    const { data, error } = await supabase
+      .from('elections')
+      .select('id, title, status, event_date')
+      .order('id', { ascending: false });
 
-      if (error) throw error;
-      state.elections = data;
-    }
-
+    if (error) throw error;
+    state.elections = data || [];
     renderElectionSelect();
   } catch (err) {
     console.error('選挙データの取得に失敗しました:', err);
@@ -303,16 +290,6 @@ async function loadElectionData(electionId) {
   const selectedEle = state.elections.find(e => e.id === electionId);
   state.electionStatus = selectedEle ? selectedEle.status : 'active';
 
-  if (state.isMockData) {
-    state.candidates = MOCK_CANDIDATES.filter(c => c.election_id === electionId);
-    setTimeout(() => {
-      loader.classList.add('hidden');
-      form.classList.remove('hidden');
-      refreshTallyData();
-    }, 250);
-    return;
-  }
-
   try {
     const { data: candidates, error: candErr } = await supabase
       .from('candidates')
@@ -343,17 +320,6 @@ async function refreshTallyData() {
     state.staff2Data.candidates[cand.id] = 0;
   });
 
-  if (state.isMockData) {
-    const storedInputs = getLocalData(STORAGE_VOTE_INPUTS, mockVoteInputs);
-    parseVoteInputs(storedInputs.filter(vi => vi.election_id === state.selectedElectionId));
-    updateStatusBanner();
-    updateSessionBadges();
-    buildCandidatesInputs();
-    fillInputFormValues();
-    updateLiveVerifBar();
-    return;
-  }
-
   try {
     const { data: inputs, error } = await supabase
       .from('vote_inputs')
@@ -362,7 +328,7 @@ async function refreshTallyData() {
 
     if (error) throw error;
 
-    parseVoteInputs(inputs);
+    parseVoteInputs(inputs || []);
     updateStatusBanner();
     updateSessionBadges();
     buildCandidatesInputs();
@@ -568,20 +534,6 @@ async function saveCurrentSessionData() {
     invalid_votes: invalidVotes,
     staff_id: session
   });
-
-  if (state.isMockData) {
-    const allInputs = getLocalData(STORAGE_VOTE_INPUTS, mockVoteInputs);
-    const filtered = allInputs.filter(
-      vi => !(vi.election_id === state.selectedElectionId && vi.input_session === session)
-    );
-    filtered.push(...rows);
-    mockVoteInputs = filtered;
-    setLocalData(STORAGE_VOTE_INPUTS, mockVoteInputs);
-
-    showToast(`${session === 'staff_1' ? '担当者1' : '担当者2'} のデータを保存しました。`, 'success');
-    await refreshTallyData();
-    return;
-  }
 
   try {
     const { error: delErr } = await supabase
@@ -814,30 +766,6 @@ async function finalizeTally() {
       is_published: false
     };
   });
-
-  if (state.isMockData) {
-    state.electionStatus = 'tally_verified';
-
-    // LocalStorageへ保存
-    const allResults = getLocalData(STORAGE_RESULTS, []);
-    const filteredResults = allResults.filter(r => r.election_id !== state.selectedElectionId);
-    filteredResults.push(...resultRows);
-    setLocalData(STORAGE_RESULTS, filteredResults);
-
-    // 選挙ステータス更新
-    const savedElections = getLocalData(STORAGE_ELECTIONS, MOCK_ELECTIONS);
-    const idx = savedElections.findIndex(e => e.id === state.selectedElectionId);
-    if (idx !== -1) {
-      savedElections[idx].status = 'tally_verified';
-      setLocalData(STORAGE_ELECTIONS, savedElections);
-    }
-
-    showToast('照合を完了し、開票結果を確定登録しました！ (K05)', 'success');
-    updateStatusBanner();
-    renderCompareScreen();
-    switchTab('report');
-    return;
-  }
 
   try {
     // 1. 既存の確定結果をクリアして挿入

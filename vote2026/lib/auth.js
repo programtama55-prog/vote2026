@@ -4,7 +4,7 @@
  */
 
 import { supabase, isSupabaseConfigured } from '@/lib/supabase.js';
-import { showToast } from '@/lib/utils.js';
+import { showToast, escapeHtml } from '@/lib/utils.js';
 
 const STORAGE_PREFIX = 'kodomo_senkyo_';
 const STORAGE_CURRENT_USER = STORAGE_PREFIX + 'current_user';
@@ -44,42 +44,32 @@ const INITIAL_ACCOUNTS = [
 /**
  * ユーザー名をSupabase用メールアドレス形式に変換
  * @param {string} username 
+ * @param {string} [optionalEmail]
  * @returns {string} メールアドレス
  */
-function toEmail(username) {
+function toEmail(username, optionalEmail) {
+  if (optionalEmail && optionalEmail.trim().includes('@')) {
+    return optionalEmail.trim().toLowerCase();
+  }
   const clean = username.trim().toLowerCase();
   if (clean.includes('@')) return clean;
-  return `${clean}@kodomosenkyo.local`;
+  return `${clean}@example.com`;
 }
 
 /**
- * ローカルストレージのアカウント一覧を取得
- * @returns {Array} アカウントの配列
+ * ローカルストレージのアカウント一覧を取得（Supabase DB `staff_accounts` からロード）
+ * @returns {Promise<Array>} アカウントの配列
  */
-export function getAccounts() {
+export async function getAccounts() {
   try {
-    const raw = localStorage.getItem(STORAGE_ACCOUNTS);
-    if (!raw) {
-      localStorage.setItem(STORAGE_ACCOUNTS, JSON.stringify(INITIAL_ACCOUNTS));
-      return INITIAL_ACCOUNTS;
+    const { data, error } = await supabase.from('staff_accounts').select('*');
+    if (!error && data && data.length > 0) {
+      return data;
     }
-    return JSON.parse(raw);
   } catch (e) {
-    console.error('アカウント情報の取得に失敗しました:', e);
-    return INITIAL_ACCOUNTS;
+    console.warn('Supabase DBからのアカウント一覧取得失敗:', e);
   }
-}
-
-/**
- * アカウント一覧を保存
- * @param {Array} accounts 
- */
-export function saveAccounts(accounts) {
-  try {
-    localStorage.setItem(STORAGE_ACCOUNTS, JSON.stringify(accounts));
-  } catch (e) {
-    console.error('アカウント情報の保存に失敗しました:', e);
-  }
+  return INITIAL_ACCOUNTS;
 }
 
 /**
@@ -101,30 +91,28 @@ export function getCurrentUser() {
  * @returns {Promise<Object|null>}
  */
 export async function getAsyncCurrentUser() {
-  if (isSupabaseConfigured()) {
-    try {
-      const { data: { user }, error } = await supabase.auth.getUser();
-      if (user && !error) {
-        const sessionUser = {
-          id: user.id,
-          username: user.user_metadata?.username || user.email.split('@')[0],
-          name: user.user_metadata?.name || user.email.split('@')[0],
-          role: user.user_metadata?.role || ROLES.UNEI,
-          email: user.email,
-          loggedInAt: new Date().toISOString()
-        };
-        localStorage.setItem(STORAGE_CURRENT_USER, JSON.stringify(sessionUser));
-        return sessionUser;
-      }
-    } catch (e) {
-      console.warn('Supabase Authユーザー取得エラー (フォールバック参照):', e);
+  try {
+    const { data: { user }, error } = await supabase.auth.getUser();
+    if (user && !error) {
+      const sessionUser = {
+        id: user.id,
+        username: user.user_metadata?.username || user.email.split('@')[0],
+        name: user.user_metadata?.name || user.email.split('@')[0],
+        role: user.user_metadata?.role || ROLES.UNEI,
+        email: user.email,
+        loggedInAt: new Date().toISOString()
+      };
+      localStorage.setItem(STORAGE_CURRENT_USER, JSON.stringify(sessionUser));
+      return sessionUser;
     }
+  } catch (e) {
+    console.warn('Supabase Authユーザー取得例外:', e);
   }
   return getCurrentUser();
 }
 
 /**
- * Supabase Auth / ローカルアカウントでのログイン
+ * Supabase Auth でのログイン
  * @param {string} username 
  * @param {string} password 
  * @param {boolean} remember 
@@ -135,62 +123,41 @@ export async function login(username, password, remember = true) {
     return { success: false, message: 'ユーザー名とパスワードを入力してください。' };
   }
 
-  // Supabase Auth 接続試行
-  if (isSupabaseConfigured()) {
-    try {
-      const email = toEmail(username);
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  try {
+    const email = toEmail(username);
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    
+    if (!error && data?.user) {
+      const user = data.user;
+      const userSession = {
+        id: user.id,
+        username: user.user_metadata?.username || username,
+        name: user.user_metadata?.name || username,
+        role: user.user_metadata?.role || ROLES.UNEI,
+        email: user.email,
+        loggedInAt: new Date().toISOString()
+      };
       
-      if (!error && data?.user) {
-        const user = data.user;
-        const userSession = {
-          id: user.id,
-          username: user.user_metadata?.username || username,
-          name: user.user_metadata?.name || username,
-          role: user.user_metadata?.role || ROLES.UNEI,
-          email: user.email,
-          loggedInAt: new Date().toISOString()
-        };
-        
-        const storage = remember ? localStorage : sessionStorage;
-        storage.setItem(STORAGE_CURRENT_USER, JSON.stringify(userSession));
-        return { success: true, user: userSession, provider: 'supabase' };
-      } else if (error && error.message && !error.message.includes('FetchError')) {
-        // Supabaseからの明確な認証エラー（例: Wrong password）
-        console.warn('Supabase Authログイン失敗:', error.message);
-      }
-    } catch (e) {
-      console.warn('Supabase Auth接続例外 (ローカルフォールバック実行):', e);
+      const storage = remember ? localStorage : sessionStorage;
+      storage.setItem(STORAGE_CURRENT_USER, JSON.stringify(userSession));
+      return { success: true, user: userSession, provider: 'supabase' };
+    } else if (error) {
+      return { success: false, message: error.message || 'ログインに失敗しました。' };
     }
+  } catch (e) {
+    console.error('Supabase Authログイン接続エラー:', e);
+    return { success: false, message: 'Supabaseへの接続に失敗しました。接続設定を確認してください。' };
   }
 
-  // ローカル・デモアカウントのフォールバックチェック
-  const accounts = getAccounts();
-  const target = accounts.find(a => a.username.trim().toLowerCase() === username.trim().toLowerCase());
-  
-  if (!target || target.password !== password) {
-    return { success: false, message: 'ユーザー名またはパスワードが正しくありません。' };
-  }
-  
-  const userSession = {
-    username: target.username,
-    name: target.name,
-    role: target.role,
-    loggedInAt: new Date().toISOString()
-  };
-  
-  const storage = remember ? localStorage : sessionStorage;
-  storage.setItem(STORAGE_CURRENT_USER, JSON.stringify(userSession));
-  
-  return { success: true, user: userSession, provider: 'local' };
+  return { success: false, message: 'ユーザー名またはパスワードが正しくありません。' };
 }
 
 /**
- * 新規ユーザーサインアップ（Supabase Auth & ローカル登録）
- * @param {Object} param0 { username, name, role, password, confirmPassword, autoLogin }
+ * 新規ユーザーサインアップ（Supabase Auth & Supabase DB登録）
+ * @param {Object} param0 { username, email, name, role, password, confirmPassword, autoLogin }
  * @returns {Promise<Object>} { success: boolean, message?: string, user?: Object }
  */
-export async function signUp({ username, name, role, password, confirmPassword, autoLogin = true }) {
+export async function signUp({ username, email, name, role, password, confirmPassword, autoLogin = true }) {
   if (!username || !name || !role || !password || !confirmPassword) {
     return { success: false, message: 'すべての項目を入力してください。' };
   }
@@ -207,87 +174,57 @@ export async function signUp({ username, name, role, password, confirmPassword, 
     return { success: false, message: '無効な役職です。「運営」「開票担当者」「管理者」から指定してください。' };
   }
 
-  const accounts = getAccounts();
-  if (accounts.some(a => a.username.toLowerCase() === username.toLowerCase())) {
-    return { success: false, message: 'このユーザー名は既に使用されています。' };
-  }
-
-  // Supabase Auth でのサインアップ実行
-  if (isSupabaseConfigured()) {
-    try {
-      const email = toEmail(username);
-      const { data, error } = await supabase.auth.signUp({
-        email: email,
-        password: password,
-        options: {
-          data: {
-            username: username.trim(),
-            name: name.trim(),
-            role: role
-          }
-        }
-      });
-
-      if (error) {
-        return { success: false, message: `Supabase認証エラー: ${error.message}` };
-      }
-
-      // Supabaseのデータベース `staff_accounts` が存在する場合は保存を試行
-      if (data?.user) {
-        try {
-          await supabase.from('staff_accounts').upsert({
-            id: data.user.id,
-            username: username.trim(),
-            name: name.trim(),
-            role: role
-          });
-        } catch (dbErr) {
-          // テーブルが無くてもAuthメタデータがあるため無視可能
+  try {
+    const targetEmail = toEmail(username, email);
+    const { data, error } = await supabase.auth.signUp({
+      email: targetEmail,
+      password: password,
+      options: {
+        data: {
+          username: username.trim(),
+          name: name.trim(),
+          role: role
         }
       }
-    } catch (e) {
-      console.warn('Supabase Authサインアップ例外 (ローカルフォールバック継続):', e);
+    });
+
+    if (error) {
+      return { success: false, message: `Supabase Auth エラー: ${error.message}` };
     }
+
+    if (data?.user) {
+      try {
+        await supabase.from('staff_accounts').upsert({
+          id: data.user.id,
+          username: username.trim(),
+          name: name.trim(),
+          role: role
+        });
+      } catch (dbErr) {
+        console.warn('staff_accounts 保存エラー:', dbErr);
+      }
+    }
+  } catch (e) {
+    return { success: false, message: `サインアップ中にエラーが発生しました: ${e.message}` };
   }
 
-  // ローカルDBにも保存（フォールバックと一覧表示用）
-  const addRes = addAccount({ username, name, role, password });
-  if (!addRes.success && !isSupabaseConfigured()) {
-    return addRes;
-  }
-  
   if (autoLogin) {
     return await login(username, password, true);
   }
   
-  return { success: true, account: addRes.account };
+  return { success: true, account: { username, name, role } };
 }
 
 /**
- * 役職指定でワンクリックログイン（デモ・テスト用）
+ * 役職指定でログイン（セッション作成）
  * @param {'運営' | '開票担当者' | '管理者'} role 
  * @returns {Object} { success: boolean, user: Object }
  */
 export function loginAsRole(role) {
-  const accounts = getAccounts();
-  let user = accounts.find(a => a.role === role);
-  
-  if (!user) {
-    user = {
-      username: `demo_${role}`,
-      name: `${role}デモ`,
-      role: role,
-      password: 'password123',
-      createdAt: new Date().toISOString()
-    };
-    accounts.push(user);
-    saveAccounts(accounts);
-  }
-  
   const userSession = {
-    username: user.username,
-    name: user.name,
-    role: user.role,
+    username: `staff_${role.toLowerCase()}`,
+    name: `${role} スタッフ`,
+    role: role,
     loggedInAt: new Date().toISOString()
   };
   
@@ -296,15 +233,13 @@ export function loginAsRole(role) {
 }
 
 /**
- * ログアウト処理 (Supabase Auth & ローカルセッションの破棄)
+ * ログアウト処理 (Supabase Auth ログアウト)
  */
 export async function logout() {
-  if (isSupabaseConfigured()) {
-    try {
-      await supabase.auth.signOut();
-    } catch (e) {
-      console.warn('Supabase Authログアウトエラー:', e);
-    }
+  try {
+    await supabase.auth.signOut();
+  } catch (e) {
+    console.warn('Supabase Authログアウトエラー:', e);
   }
 
   localStorage.removeItem(STORAGE_CURRENT_USER);
@@ -316,11 +251,11 @@ export async function logout() {
 }
 
 /**
- * 新規アカウントの追加（管理者操作用）
+ * 新規アカウントの追加（管理者操作・Supabase DB）
  * @param {Object} param0 { username, name, role, password }
- * @returns {Object} { success: boolean, message?: string }
+ * @returns {Promise<Object>} { success: boolean, message?: string }
  */
-export function addAccount({ username, name, role, password }) {
+export async function addAccount({ username, name, role, password }) {
   if (!username || !name || !role || !password) {
     return { success: false, message: 'すべての項目を入力してください。' };
   }
@@ -329,26 +264,24 @@ export function addAccount({ username, name, role, password }) {
     return { success: false, message: '無効な役職です。「運営」「開票担当者」「管理者」のいずれかを指定してください。' };
   }
   
-  const accounts = getAccounts();
-  if (accounts.some(a => a.username === username)) {
-    return { success: false, message: 'このユーザー名は既に使用されています。' };
+  try {
+    const { data, error } = await supabase.from('staff_accounts').insert({
+      username: username.trim(),
+      name: name.trim(),
+      role: role
+    }).select();
+
+    if (error) {
+      return { success: false, message: `DB保存エラー: ${error.message}` };
+    }
+    return { success: true, account: data[0] };
+  } catch (e) {
+    return { success: false, message: e.message };
   }
-  
-  const newAccount = {
-    username: username.trim(),
-    name: name.trim(),
-    role: role,
-    password: password,
-    createdAt: new Date().toISOString()
-  };
-  
-  accounts.push(newAccount);
-  saveAccounts(accounts);
-  return { success: true, account: newAccount };
 }
 
 /**
- * アカウントの役職更新 (Supabase & ローカル同期)
+ * アカウントの役職更新 (Supabase DB `staff_accounts` 更新)
  * @param {string} username 
  * @param {'運営' | '開票担当者' | '管理者'} newRole 
  * @returns {Promise<Object>} { success: boolean, message?: string }
@@ -358,11 +291,13 @@ export async function updateAccountRole(username, newRole) {
     return { success: false, message: '無効な役職です。' };
   }
   
-  const accounts = getAccounts();
-  const index = accounts.findIndex(a => a.username === username);
-  if (index !== -1) {
-    accounts[index].role = newRole;
-    saveAccounts(accounts);
+  try {
+    const { error } = await supabase.from('staff_accounts').update({ role: newRole }).eq('username', username);
+    if (error) {
+      console.warn('staff_accounts 役職更新エラー:', error.message);
+    }
+  } catch (e) {
+    console.warn('staff_accounts 役職更新例外:', e);
   }
   
   // 現在ログイン中ユーザーならセッションも更新
@@ -372,36 +307,39 @@ export async function updateAccountRole(username, newRole) {
     localStorage.setItem(STORAGE_CURRENT_USER, JSON.stringify(currentUser));
   }
   
-  // Supabase User Metadata の更新（ログイン中であれば）
-  if (isSupabaseConfigured() && currentUser) {
-    try {
-      await supabase.auth.updateUser({
-        data: { role: newRole }
-      });
-    } catch (e) {
-      console.warn('Supabase Authロール更新エラー:', e);
-    }
+  try {
+    await supabase.auth.updateUser({
+      data: { role: newRole }
+    });
+  } catch (e) {
+    // ログイン中でない等の場合は無視
   }
 
   return { success: true };
 }
 
 /**
- * アカウントの削除
+ * アカウントの削除（Supabase DB）
  * @param {string} username 
- * @returns {Object}
+ * @returns {Promise<Object>}
  */
-export function deleteAccount(username) {
+export async function deleteAccount(username) {
   const currentUser = getCurrentUser();
   if (currentUser && currentUser.username === username) {
     return { success: false, message: '現在ログイン中の自分自身のアカウントは削除できません。' };
   }
   
-  let accounts = getAccounts();
-  accounts = accounts.filter(a => a.username !== username);
-  saveAccounts(accounts);
-  return { success: true };
+  try {
+    const { error } = await supabase.from('staff_accounts').delete().eq('username', username);
+    if (error) {
+      return { success: false, message: `削除エラー: ${error.message}` };
+    }
+    return { success: true };
+  } catch (e) {
+    return { success: false, message: e.message };
+  }
 }
+
 
 /**
  * ページアクセス権限チェック（アクセス不可の場合はリダイレクト）
@@ -507,7 +445,7 @@ export function renderAuthHeaderWidget(containerIdOrElement) {
       <div class="flex items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700/60 shadow-sm">
         <div class="text-left">
           <div class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
-            <span>${user.name}</span>
+            <span>${escapeHtml(user.name)}</span>
           </div>
           <div class="mt-0.5">${getRoleBadgeHtml(user.role)}</div>
         </div>
