@@ -175,25 +175,6 @@ function initEventListeners() {
     });
   }
 
-  // デモ 1クリックログインボタン
-  document.getElementById('demo-btn-unei').addEventListener('click', () => {
-    const res = loginAsRole(ROLES.UNEI);
-    showToast('運営アカウントとしてログインしました', 'success');
-    redirectAfterLogin(ROLES.UNEI);
-  });
-
-  document.getElementById('demo-btn-kaihyo').addEventListener('click', () => {
-    const res = loginAsRole(ROLES.KAIHYO);
-    showToast('開票担当者アカウントとしてログインしました', 'success');
-    redirectAfterLogin(ROLES.KAIHYO);
-  });
-
-  document.getElementById('demo-btn-admin').addEventListener('click', () => {
-    const res = loginAsRole(ROLES.ADMIN);
-    showToast('管理者アカウントとしてログインしました', 'success');
-    redirectAfterLogin(ROLES.ADMIN);
-  });
-
   // アカウント追加フォーム (管理者機能)
   const addForm = document.getElementById('add-account-form');
   if (addForm) {

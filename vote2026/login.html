@@ -40,6 +40,9 @@
         }
     </style>
 
+    <!-- Supabase Environment Config -->
+    <script src="./env.js"></script>
+
     <!-- Import Map definition -->
     <script type="importmap">
         {
@@ -72,6 +75,10 @@
             </div>
 
             <div class="flex items-center gap-2.5">
+                <button type="button" id="btn-open-supabase-config" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition flex items-center gap-2" title="Supabase接続設定">
+                    <i class="fa-solid fa-database text-indigo-400"></i>
+                    <span class="hidden sm:inline">DB接続設定</span>
+                </button>
                 <a href="./index.html" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-700/60 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-600/60 transition flex items-center gap-2">
                     <i class="fa-solid fa-house"></i>
                     <span>一般ポータル</span>
@@ -262,72 +269,44 @@
                 </div>
             </div>
 
-            <!-- 役職別デモワンクリックログイン -->
+            <!-- Supabase データベース接続ステータス -->
             <div class="lg:col-span-6 space-y-4">
-                <div class="bg-slate-800/60 border border-slate-700/60 rounded-3xl p-6 shadow-xl">
-                    <h2 class="text-sm font-bold text-slate-300 flex items-center justify-between mb-4">
-                        <span class="flex items-center gap-2"><i class="fa-solid fa-bolt text-amber-400"></i> 役職別 1クリックデモログイン</span>
-                        <span class="text-[0.65rem] px-2 py-0.5 rounded bg-slate-700 text-slate-400">テスト用</span>
-                    </h2>
-                    <p class="text-xs text-slate-400 mb-4">いずれかの役職カードをクリックすると、その役職の権限で即座にログインして各機能をテストできます。</p>
+                <div class="bg-slate-800/80 border border-slate-700/80 rounded-3xl p-6 shadow-xl space-y-5">
+                    <div class="flex items-center justify-between border-b border-slate-700/80 pb-4">
+                        <h2 class="text-sm font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-database text-emerald-400"></i> Supabase 本番DB接続ステータス
+                        </h2>
+                        <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                            接続有効
+                        </span>
+                    </div>
 
-                    <div class="space-y-3">
-                        <!-- 運営ロール -->
-                        <button type="button" id="demo-btn-unei" class="w-full p-4 rounded-2xl bg-slate-800 hover:bg-slate-700/80 border border-sky-500/30 hover:border-sky-400 transition text-left group">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-10 h-10 rounded-xl bg-sky-500/20 text-sky-400 flex items-center justify-center text-lg">
-                                        <i class="fa-solid fa-users-gear"></i>
-                                    </div>
-                                    <div>
-                                        <div class="text-sm font-bold text-white flex items-center gap-2">
-                                            役職: 運営
-                                            <span class="text-[0.65rem] px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-500/30">受付 / ダッシュボード</span>
-                                        </div>
-                                        <div class="text-xs text-slate-400 mt-0.5">投票所での受付・投票用紙交付および当日の運営状況確認が可能です。</div>
-                                    </div>
-                                </div>
-                                <i class="fa-solid fa-chevron-right text-slate-500 group-hover:text-sky-400 group-hover:translate-x-1 transition"></i>
-                            </div>
-                        </button>
+                    <p class="text-xs text-slate-300 leading-relaxed">
+                        本システムは Supabase Auth および PostgreSQL データベースに直接接続して認証・権限管理を行っています。
+                    </p>
 
-                        <!-- 開票担当者ロール -->
-                        <button type="button" id="demo-btn-kaihyo" class="w-full p-4 rounded-2xl bg-slate-800 hover:bg-slate-700/80 border border-emerald-500/30 hover:border-emerald-400 transition text-left group">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-lg">
-                                        <i class="fa-solid fa-box-archive"></i>
-                                    </div>
-                                    <div>
-                                        <div class="text-sm font-bold text-white flex items-center gap-2">
-                                            役職: 開票担当者
-                                            <span class="text-[0.65rem] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">開票・集計作業</span>
-                                        </div>
-                                        <div class="text-xs text-slate-400 mt-0.5">開票作業での二重入力検証、票数一致の確定、開票報告書作成が可能です。</div>
-                                    </div>
-                                </div>
-                                <i class="fa-solid fa-chevron-right text-slate-500 group-hover:text-emerald-400 group-hover:translate-x-1 transition"></i>
+                    <div class="space-y-3 bg-slate-900/80 p-4 rounded-2xl border border-slate-700/60 font-mono text-xs">
+                        <div>
+                            <div class="text-[0.65rem] text-slate-400 font-bold uppercase tracking-wider mb-1">プロジェクト URL (.env)</div>
+                            <div class="text-indigo-300 font-semibold truncate" id="display-supabase-url">https://yuxvrgkmjorzcgrtjmoz.supabase.co</div>
+                        </div>
+                        <div class="pt-2 border-t border-slate-800">
+                            <div class="text-[0.65rem] text-slate-400 font-bold uppercase tracking-wider mb-1">認証方式</div>
+                            <div class="text-emerald-400 font-semibold flex items-center gap-2">
+                                <i class="fa-solid fa-lock"></i> Supabase Auth (JWT + RLS 認可)
                             </div>
-                        </button>
+                        </div>
+                    </div>
 
-                        <!-- 管理者ロール -->
-                        <button type="button" id="demo-btn-admin" class="w-full p-4 rounded-2xl bg-slate-800 hover:bg-slate-700/80 border border-amber-500/30 hover:border-amber-400 transition text-left group">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-lg">
-                                        <i class="fa-solid fa-user-shield"></i>
-                                    </div>
-                                    <div>
-                                        <div class="text-sm font-bold text-white flex items-center gap-2">
-                                            役職: 管理者
-                                            <span class="text-[0.65rem] px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">全権限 + 役職管理</span>
-                                        </div>
-                                        <div class="text-xs text-slate-400 mt-0.5">受付・開票・ダッシュボード全ての操作および新スタッフの役職付与が可能です。</div>
-                                    </div>
-                                </div>
-                                <i class="fa-solid fa-chevron-right text-slate-500 group-hover:text-amber-400 group-hover:translate-x-1 transition"></i>
-                            </div>
-                        </button>
+                    <div class="p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-xs text-indigo-200/90 space-y-2">
+                        <div class="font-bold flex items-center gap-1.5 text-indigo-300">
+                            <i class="fa-solid fa-circle-info"></i> スタッフ利用のご案内
+                        </div>
+                        <p class="text-[0.75rem] leading-relaxed">
+                            新規スタッフの方は「サインアップ (新規登録)」タブからアカウントを作成してください。<br>
+                            管理者によって割り当てられた役職（運営・開票担当者・管理者）に応じて、利用可能な機能が自動制御されます。
+                        </p>
                     </div>
                 </div>
             </div>
@@ -413,6 +392,44 @@
             <p>こども選挙 システム運営事務局 &copy; 2026 - 役割ベースアクセス制御 (RBAC) 認証基盤</p>
         </div>
     </footer>
+
+    <!-- Supabase 接続設定モーダル -->
+    <div id="supabase-config-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-6">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+                <h3 class="text-base font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-database text-indigo-400"></i> Supabase 接続設定
+                </h3>
+                <button type="button" id="btn-close-supabase-config" class="text-slate-400 hover:text-white transition text-lg">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <p class="text-xs text-slate-400 leading-relaxed">
+                Supabase プロジェクトの URL と Anon Key を設定すると、本番DB認証に切り替わります。未設定時はデモ・ローカルモードで動作します。
+            </p>
+
+            <form id="supabase-config-form" class="space-y-4">
+                <div>
+                    <label for="cfg-supabase-url" class="block text-xs font-bold text-slate-300 mb-1.5">Supabase Project URL</label>
+                    <input type="url" id="cfg-supabase-url" placeholder="https://xxxx.supabase.co" class="w-full px-3.5 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-xs font-mono text-slate-100 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
+                </div>
+                <div>
+                    <label for="cfg-supabase-key" class="block text-xs font-bold text-slate-300 mb-1.5">Supabase Anon Key</label>
+                    <input type="text" id="cfg-supabase-key" placeholder="ey..." class="w-full px-3.5 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-xs font-mono text-slate-100 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
+                </div>
+
+                <div class="flex items-center justify-between pt-2">
+                    <button type="button" id="btn-clear-supabase-config" class="px-3 py-2 rounded-xl text-xs font-bold bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 transition">
+                        設定クリア (デモに戻す)
+                    </button>
+                    <button type="submit" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-indigo-600/30 transition flex items-center gap-2">
+                        <i class="fa-solid fa-floppy-disk"></i> 保存して適用
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <!-- Script -->
     <script type="module" src="./login.js"></script>

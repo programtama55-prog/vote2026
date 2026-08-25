@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kodomo-senkyo-v2';
+const CACHE_NAME = 'kodomo-senkyo-v3';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -33,8 +33,14 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  // GETリクエスト以外（POST, PUT, DELETE等）はキャッシュ対象外のためそのままスルー
+  if (event.request.method !== 'GET') return;
+
   // HTTP/HTTPSリクエストのみを対象にする
   if (!event.request.url.startsWith('http')) return;
+
+  // Supabase等の外部API通信はキャッシュ対象外のためスルー
+  if (event.request.url.includes('supabase.co')) return;
 
   event.respondWith(
     fetch(event.request)
@@ -48,9 +54,18 @@ self.addEventListener('fetch', (event) => {
         }
         return response;
       })
-      .catch(() => {
+      .catch(async () => {
         // オフライン等でネットワーク失敗した場合のみキャッシュから読み取る
-        return caches.match(event.request);
+        const cachedResponse = await caches.match(event.request);
+        if (cachedResponse) {
+          return cachedResponse;
+        }
+        // キャッシュが存在しない場合でも Response オブジェクトを返して TypeError を防ぐ
+        return new Response('Network error or resource not cached', {
+          status: 503,
+          statusText: 'Service Unavailable',
+          headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+        });
       })
   );
 });
