@@ -8,38 +8,12 @@ import { showToast, escapeHtml } from '@/lib/utils.js';
 
 const STORAGE_PREFIX = 'kodomo_senkyo_';
 const STORAGE_CURRENT_USER = STORAGE_PREFIX + 'current_user';
-const STORAGE_ACCOUNTS = STORAGE_PREFIX + 'staff_accounts';
 
 export const ROLES = {
   UNEI: '運営',
   KAIHYO: '開票担当者',
   ADMIN: '管理者'
 };
-
-// 初期デフォルトアカウント定義（デモ・モック実行用）
-const INITIAL_ACCOUNTS = [
-  {
-    username: 'staff_unei',
-    name: '運営 スタッフ',
-    role: ROLES.UNEI,
-    password: 'password123',
-    createdAt: new Date().toISOString()
-  },
-  {
-    username: 'staff_kaihyo',
-    name: '開票 担当者',
-    role: ROLES.KAIHYO,
-    password: 'password123',
-    createdAt: new Date().toISOString()
-  },
-  {
-    username: 'admin',
-    name: '全体 管理者',
-    role: ROLES.ADMIN,
-    password: 'admin123',
-    createdAt: new Date().toISOString()
-  }
-];
 
 /**
  * ユーザー名をSupabase用メールアドレス形式に変換
@@ -53,18 +27,24 @@ function toEmail(username, optionalEmail) {
   }
   const clean = username.trim().toLowerCase();
   if (clean.includes('@')) return clean;
-  return `${clean}@example.com`;
+  
+  // 非ASCII文字 (日本語など) を安全なASCII表現に変換
+  const asciiSafe = clean.replace(/[^a-z0-9_.-]/g, (char) => {
+    return 'u' + char.charCodeAt(0).toString(16);
+  });
+  const prefix = asciiSafe || 'user_' + Date.now();
+  return `${prefix}@example.com`;
 }
 
 /**
- * ローカルストレージのアカウント一覧を取得（Supabase DB `staff_accounts` からロード）
+ * Supabase DB `staff_accounts` からアカウント一覧を取得
  * @returns {Promise<Array>} アカウントの配列
  */
 export async function getAccounts() {
   try {
     const { data, error } = await supabase.from('staff_accounts').select('*');
     if (error) {
-      console.error('staff_accounts 取得エラー:', error.message);
+      console.error('staff_accounts DB取得エラー:', error.message);
       return [];
     }
     return data || [];
@@ -96,11 +76,28 @@ export async function getAsyncCurrentUser() {
   try {
     const { data: { user }, error } = await supabase.auth.getUser();
     if (user && !error) {
+      let role = user.user_metadata?.role || ROLES.UNEI;
+      let name = user.user_metadata?.name || user.email.split('@')[0];
+      
+      // DB側のstaff_accountsから最新情報を照合
+      try {
+        const username = user.user_metadata?.username || user.email.split('@')[0];
+        const { data: dbAccount } = await supabase
+          .from('staff_accounts')
+          .select('role, name')
+          .eq('username', username)
+          .maybeSingle();
+        if (dbAccount) {
+          if (dbAccount.role) role = dbAccount.role;
+          if (dbAccount.name) name = dbAccount.name;
+        }
+      } catch (dbErr) {}
+
       const sessionUser = {
         id: user.id,
         username: user.user_metadata?.username || user.email.split('@')[0],
-        name: user.user_metadata?.name || user.email.split('@')[0],
-        role: user.user_metadata?.role || ROLES.UNEI,
+        name: name,
+        role: role,
         email: user.email,
         loggedInAt: new Date().toISOString()
       };
@@ -114,11 +111,11 @@ export async function getAsyncCurrentUser() {
 }
 
 /**
- * Supabase Auth でのログイン
+ * ログイン処理 (Supabase Auth ＋ Supabase DB)
  * @param {string} username 
  * @param {string} password 
  * @param {boolean} remember 
- * @returns {Promise<Object>} { success: boolean, user?: Object, message?: string }
+ * @returns {Promise<Object>} { success: boolean, user?: Object, message?: string, provider?: string }
  */
 export async function login(username, password, remember = true) {
   if (!username || !password) {
@@ -133,11 +130,30 @@ export async function login(username, password, remember = true) {
     
     if (!error && data?.user) {
       const user = data.user;
+      
+      let role = user.user_metadata?.role || ROLES.UNEI;
+      let name = user.user_metadata?.name || cleanUsername;
+
+      // Supabase DB (staff_accounts) から最新情報を取得
+      try {
+        const { data: dbAccount } = await supabase
+          .from('staff_accounts')
+          .select('role, name')
+          .eq('username', cleanUsername)
+          .maybeSingle();
+        if (dbAccount) {
+          if (dbAccount.role) role = dbAccount.role;
+          if (dbAccount.name) name = dbAccount.name;
+        }
+      } catch (dbErr) {
+        console.warn('staff_accounts からの情報取得例外:', dbErr);
+      }
+
       const userSession = {
         id: user.id,
         username: user.user_metadata?.username || cleanUsername,
-        name: user.user_metadata?.name || cleanUsername,
-        role: user.user_metadata?.role || ROLES.UNEI,
+        name: name,
+        role: role,
         email: user.email,
         loggedInAt: new Date().toISOString()
       };
@@ -146,7 +162,15 @@ export async function login(username, password, remember = true) {
       storage.setItem(STORAGE_CURRENT_USER, JSON.stringify(userSession));
       return { success: true, user: userSession, provider: 'supabase' };
     } else if (error) {
-      return { success: false, message: error.message || 'ログインに失敗しました。ユーザー名とパスワードを確認してください。' };
+      let errorMsg = error.message;
+      if (error.status === 429) {
+        errorMsg = 'リクエスト制限（Rate limit exceeded）に達しました。時間を置いてから再試行してください。';
+      } else if (errorMsg.includes('Invalid login credentials')) {
+        errorMsg = 'ユーザー名またはパスワードが正しくありません。';
+      } else if (errorMsg.includes('Email not confirmed')) {
+        errorMsg = 'メールアドレスの確認が完了していません。Supabaseダッシュボードの [Authentication] > [Providers] > [Email] で「Confirm email」をオフに設定してください。';
+      }
+      return { success: false, message: `ログインエラー: ${errorMsg}` };
     }
   } catch (e) {
     console.error('Supabase Authログイン接続エラー:', e);
@@ -157,7 +181,7 @@ export async function login(username, password, remember = true) {
 }
 
 /**
- * 新規ユーザーサインアップ（Supabase Auth または ローカルストレージ保存）
+ * 新規ユーザーサインアップ（Supabase Auth ＋ Supabase DB `staff_accounts` 保存）
  * @param {Object} param0 { username, email, name, role, password, confirmPassword, autoLogin }
  * @returns {Promise<Object>} { success: boolean, message?: string, user?: Object }
  */
@@ -196,24 +220,61 @@ export async function signUp({ username, email, name, role, password, confirmPas
     });
 
     if (error) {
-      return { success: false, message: `Supabase Auth エラー: ${error.message}` };
+      let errorMsg = error.message;
+      if (error.status === 429 || errorMsg.includes('Rate limit')) {
+        errorMsg = 'Supabaseのサインアップ制限（429 Rate limit exceeded）に達しました。時間を置いて再試行してください。';
+      } else if (error.status === 500 || errorMsg.includes('Internal Server Error') || errorMsg.includes('confirmation mail') || errorMsg.includes('Database error')) {
+        errorMsg = `Supabase 500 (Internal Server Error) が発生しました。\n` +
+          `【原因と対応方法】\n` +
+          `1. Supabaseダッシュボードの [Authentication] > [Providers] > [Email] で「Confirm email」がオンになっていると、メール送信エラー(500)が発生します。「Confirm email」をオフにしてください。\n` +
+          `2. データベース側で auth.users のトリガーや staff_accounts テーブルの設定エラーが発生している可能性があります。`;
+      }
+      return { success: false, message: `Supabase Auth エラー: ${errorMsg}` };
     }
 
     if (data?.user) {
-      try {
-        await supabase.from('staff_accounts').upsert({
-          id: data.user.id,
-          username: cleanUsername,
-          name: cleanName,
-          role: role
-        });
-      } catch (dbErr) {
-        console.warn('staff_accounts 保存エラー:', dbErr);
+      const { error: dbError } = await supabase.from('staff_accounts').upsert({
+        id: data.user.id,
+        username: cleanUsername,
+        name: cleanName,
+        role: role
+      });
+
+      if (dbError) {
+        console.error('staff_accounts DB保存エラー:', dbError.message);
+        if (dbError.message.includes('Could not find the table') || dbError.code === 'PGRST301') {
+          return {
+            success: false,
+            message: 'Supabaseのデータベースに staff_accounts テーブルが存在しません。docs/schema.sql を Supabase の SQL Editor で実行してください。'
+          };
+        }
+        return { success: false, message: `DB保存エラー: ${dbError.message}` };
       }
     }
 
+    // セッションが即時発行された場合（メール確認OFF時の正常ケース）
+    if (data?.session) {
+      const sessionUser = {
+        id: data.user.id,
+        username: cleanUsername,
+        name: cleanName,
+        role: role,
+        email: data.user.email,
+        loggedInAt: new Date().toISOString()
+      };
+      localStorage.setItem(STORAGE_CURRENT_USER, JSON.stringify(sessionUser));
+      return { success: true, user: sessionUser, provider: 'supabase' };
+    }
+
     if (autoLogin) {
-      return await login(cleanUsername, password, true);
+      const loginRes = await login(cleanUsername, password, true);
+      if (!loginRes.success && (loginRes.message.includes('Email not confirmed') || loginRes.message.includes('メールアドレスの確認'))) {
+        return {
+          success: false,
+          message: 'アカウント作成は受付されましたが、Supabaseでメール確認が有効なため自動ログインできません。Supabaseダッシュボード (Authentication > Providers > Email) で「Confirm email」をオフに設定してください。'
+        };
+      }
+      return loginRes;
     }
     
     return { success: true, account: { username: cleanUsername, name: cleanName, role } };
@@ -253,7 +314,7 @@ export async function logout() {
 }
 
 /**
- * 新規アカウントの追加（管理者操作・Supabase DB）
+ * 新規アカウントの追加（管理者操作・Supabase Auth ＋ Supabase DB `staff_accounts` 保存）
  * @param {Object} param0 { username, name, role, password }
  * @returns {Promise<Object>} { success: boolean, message?: string }
  */
@@ -268,21 +329,15 @@ export async function addAccount({ username, name, role, password }) {
 
   const cleanUsername = username.trim();
   const cleanName = name.trim();
-  
-  try {
-    const { data, error } = await supabase.from('staff_accounts').insert({
-      username: cleanUsername,
-      name: cleanName,
-      role: role
-    }).select();
 
-    if (error) {
-      return { success: false, message: `DB保存エラー: ${error.message}` };
-    }
-    return { success: true, account: data[0] };
-  } catch (e) {
-    return { success: false, message: `Supabase DB エラー: ${e.message}` };
-  }
+  return await signUp({
+    username: cleanUsername,
+    name: cleanName,
+    role: role,
+    password: password,
+    confirmPassword: password,
+    autoLogin: false
+  });
 }
 
 /**
@@ -301,7 +356,6 @@ export async function updateAccountRole(username, newRole) {
     if (error) {
       return { success: false, message: `staff_accounts 役職更新エラー: ${error.message}` };
     }
-    await supabase.auth.updateUser({ data: { role: newRole } }).catch(() => {});
   } catch (e) {
     return { success: false, message: `Supabase DB エラー: ${e.message}` };
   }
@@ -325,7 +379,7 @@ export async function updateAccountRole(username, newRole) {
 }
 
 /**
- * アカウントの削除（Supabase DB）
+ * アカウントの削除（Supabase DB `staff_accounts` から削除）
  * @param {string} username 
  * @returns {Promise<Object>}
  */
