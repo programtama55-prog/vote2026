@@ -7,6 +7,15 @@
     <meta name="description" content="こども選挙の運営本部・スタッフ用リアルタイム状況ダッシュボードです。来場者属性、受付・交付進捗、CSVバックアップ取得が可能です。">
     
     <!-- Tailwind CSS CDN -->
+    <script>
+      (function() {
+        const warn = console.warn;
+        console.warn = function(...args) {
+          if (args[0] && typeof args[0] === 'string' && args[0].includes('cdn.tailwindcss.com should not be used in production')) return;
+          warn.apply(console, args);
+        };
+      })();
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {

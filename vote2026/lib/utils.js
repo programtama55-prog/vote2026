@@ -96,3 +96,14 @@ export function showToast(message, type = 'info') {
     }, 300);
   }, 4000);
 }
+
+/**
+ * 文字列がUUID（v4等）の形式に一致するかどうかを判定します。
+ * @param {string} str 
+ * @returns {boolean}
+ */
+export function isUuid(str) {
+  if (typeof str !== 'string') return false;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+}
+

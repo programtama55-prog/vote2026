@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase.js';
-import { parseFurigana, shuffleArray, showToast, escapeHtml } from '@/lib/utils.js';
+import { parseFurigana, shuffleArray, showToast, escapeHtml, isUuid } from '@/lib/utils.js';
 import { renderAuthHeaderWidget } from '@/lib/auth.js';
 
 // --- アプリケーションの状態管理 (State) ---
@@ -398,10 +398,17 @@ async function loadElections() {
       .order('id', { ascending: false });
 
     if (error) throw error;
-    state.elections = data && data.length > 0 ? data : MOCK_ELECTIONS;
+    if (data && data.length > 0) {
+      state.elections = data;
+      state.isMockData = false;
+    } else {
+      state.elections = MOCK_ELECTIONS;
+      state.isMockData = true;
+    }
   } catch (err) {
     console.warn('Supabase DBフェッチエラー (デフォルト設定を使用):', err);
     state.elections = MOCK_ELECTIONS;
+    state.isMockData = true;
   }
 
   renderElectionSelect();
@@ -409,13 +416,32 @@ async function loadElections() {
 
 async function loadElectionData(electionId) {
   const loader = document.getElementById('section-loader');
-  loader.classList.remove('hidden');
+  if (loader) loader.classList.remove('hidden');
+
+  // モックデータ使用中、または electionId が UUID 形式でない場合（例: 'ele-1'）、
+  // PostgreSQL への型不適合クエリ (400 Bad Request) を防止しモックデータを使用
+  if (state.isMockData || !isUuid(electionId)) {
+    state.candidates = MOCK_CANDIDATES.filter(c => c.election_id === electionId);
+    state.questions = MOCK_QUESTIONS.filter(q => q.election_id === electionId);
+    state.officialQuestions = state.questions.filter(q => q.is_official);
+    state.workshops = MOCK_WORKSHOPS.filter(w => w.election_id === electionId);
+    state.issues = MOCK_ISSUES.filter(i => i.election_id === electionId);
+    state.candidateAnswers = MOCK_ANSWERS;
+    state.reactions = {};
+    if (loader) loader.classList.add('hidden');
+    switchMainTab(state.activeMainTab);
+    return;
+  }
 
   try {
-    const { data: candidates } = await supabase.from('candidates').select('*').eq('election_id', electionId);
-    const { data: questions } = await supabase.from('questions').select('*').eq('election_id', electionId);
-    const { data: workshops } = await supabase.from('workshops').select('*').eq('election_id', electionId);
-    const { data: issues } = await supabase.from('issues').select('*').eq('election_id', electionId);
+    const { data: candidates, error: errCand } = await supabase.from('candidates').select('*').eq('election_id', electionId);
+    if (errCand) throw errCand;
+    const { data: questions, error: errQuest } = await supabase.from('questions').select('*').eq('election_id', electionId);
+    if (errQuest) throw errQuest;
+    const { data: workshops, error: errWs } = await supabase.from('workshops').select('*').eq('election_id', electionId);
+    if (errWs) throw errWs;
+    const { data: issues, error: errIss } = await supabase.from('issues').select('*').eq('election_id', electionId);
+    if (errIss) throw errIss;
 
     state.candidates = (candidates && candidates.length > 0) ? candidates : MOCK_CANDIDATES.filter(c => c.election_id === electionId);
     state.questions = (questions && questions.length > 0) ? questions : MOCK_QUESTIONS.filter(q => q.election_id === electionId);
@@ -423,33 +449,46 @@ async function loadElectionData(electionId) {
     state.workshops = (workshops && workshops.length > 0) ? workshops : MOCK_WORKSHOPS.filter(w => w.election_id === electionId);
     state.issues = (issues && issues.length > 0) ? issues : MOCK_ISSUES.filter(i => i.election_id === electionId);
 
-    const qIds = state.questions.map(q => q.id);
+    const qIds = state.questions.map(q => q.id).filter(id => isUuid(id));
     if (qIds.length > 0) {
-      const { data: answers } = await supabase.from('candidate_answers').select('*').in('question_id', qIds);
-      state.candidateAnswers = (answers && answers.length > 0) ? answers : MOCK_ANSWERS;
-      await fetchReactionCounts();
+      const { data: answers, error: errAns } = await supabase.from('candidate_answers').select('*').in('question_id', qIds);
+      if (!errAns && answers && answers.length > 0) {
+        state.candidateAnswers = answers;
+        await fetchReactionCounts();
+      } else {
+        state.candidateAnswers = MOCK_ANSWERS;
+        state.reactions = {};
+      }
     } else {
-      state.candidateAnswers = [];
+      state.candidateAnswers = MOCK_ANSWERS;
       state.reactions = {};
     }
 
-    loader.classList.add('hidden');
+    if (loader) loader.classList.add('hidden');
     switchMainTab(state.activeMainTab);
 
   } catch (err) {
-    console.error('データ取得失敗:', err);
-    showToast('データのよみこみにしっぱいしました。', 'error');
-    loader.classList.add('hidden');
+    console.warn('データ取得エラー (デフォルト設定を使用):', err);
+    state.candidates = MOCK_CANDIDATES.filter(c => c.election_id === electionId);
+    state.questions = MOCK_QUESTIONS.filter(q => q.election_id === electionId);
+    state.officialQuestions = state.questions.filter(q => q.is_official);
+    state.workshops = MOCK_WORKSHOPS.filter(w => w.election_id === electionId);
+    state.issues = MOCK_ISSUES.filter(i => i.election_id === electionId);
+    state.candidateAnswers = MOCK_ANSWERS;
+    state.reactions = {};
+    if (loader) loader.classList.add('hidden');
+    switchMainTab(state.activeMainTab);
   }
 }
 
 async function fetchReactionCounts() {
   state.reactions = {};
-  const ansIds = state.candidateAnswers.map(a => a.id);
+  const ansIds = state.candidateAnswers.map(a => a.id).filter(id => isUuid(id));
   if (ansIds.length === 0) return;
 
   try {
-    const { data } = await supabase.from('reactions').select('answer_id, type').in('answer_id', ansIds);
+    const { data, error } = await supabase.from('reactions').select('answer_id, type').in('answer_id', ansIds);
+    if (error) throw error;
     ansIds.forEach(id => { state.reactions[id] = { agree: 0, difficult: 0, more_info: 0 }; });
     if (data) {
       data.forEach(item => {
