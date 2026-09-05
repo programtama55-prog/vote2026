@@ -394,7 +394,7 @@ async function loadElections() {
   try {
     const { data, error } = await supabase
       .from('elections')
-      .select('id, title, description, status')
+      .select('*')
       .order('id', { ascending: false });
 
     if (error) throw error;
