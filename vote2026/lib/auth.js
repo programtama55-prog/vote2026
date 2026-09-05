@@ -194,16 +194,23 @@ export async function login(username, password, remember = true) {
       saveLocalAccount({ id: user.id, username: cleanUsername, name: name, role: role, password: password });
       return { success: true, user: userSession, provider: 'supabase' };
     }
+
+    if (error) {
+      const errorMsg = error.message || '';
+      if (errorMsg.includes('Invalid login credentials') || errorMsg.includes('Invalid credentials')) {
+        return { success: false, message: 'ユーザー名またはパスワードが正しくありません。' };
+      }
+    }
   } catch (e) {
     console.warn('Supabase Authログイン接続例外:', e);
   }
 
-  // Supabase Auth接続不可・エラー時はローカル保存済みアカウントで照合
+  // Supabase Auth接続不可・エラー時はローカル保存済みアカウントで照合 (パスワード厳密判定)
   const localAccounts = getStoredLocalAccounts();
   const found = localAccounts.find(a => a.username && a.username.toLowerCase() === cleanUsername.toLowerCase());
   if (found) {
-    if (found.password && found.password !== password) {
-      return { success: false, message: 'パスワードが正しくありません。' };
+    if (!found.password || found.password !== password) {
+      return { success: false, message: 'ユーザー名またはパスワードが正しくありません。' };
     }
     const userSession = {
       id: found.id || 'local_' + Date.now(),

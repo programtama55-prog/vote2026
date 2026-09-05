@@ -152,6 +152,16 @@
                         <p class="text-xs text-slate-400 mt-1">登録済みのスタッフアカウントでログインしてください。</p>
                     </div>
 
+                    <!-- エラー・成功インラインアラート -->
+                    <div id="login-error-alert" class="hidden p-3.5 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-300 text-xs font-bold mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-circle-exclamation text-rose-400 text-base shrink-0"></i>
+                        <span id="login-error-text">ユーザー名またはパスワードが正しくありません。</span>
+                    </div>
+                    <div id="login-success-alert" class="hidden p-3.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-circle-check text-emerald-400 text-base shrink-0 animate-bounce"></i>
+                        <span id="login-success-text">ログインに成功しました。画面を切り替えています...</span>
+                    </div>
+
                     <form id="login-form" class="space-y-4">
                         <div>
                             <label for="username" class="block text-xs font-bold text-slate-300 mb-1.5">ユーザー名 (ID)</label>
@@ -178,7 +188,7 @@
                             </label>
                         </div>
 
-                        <button type="submit" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold rounded-xl shadow-lg shadow-indigo-600/30 transition flex items-center justify-center gap-2">
+                        <button type="submit" id="btn-submit-login" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold rounded-xl shadow-lg shadow-indigo-600/30 transition flex items-center justify-center gap-2">
                             <i class="fa-solid fa-right-to-bracket"></i> ログインする
                         </button>
                     </form>
@@ -200,6 +210,16 @@
                             <i class="fa-solid fa-user-plus text-emerald-400"></i> 新規スタッフ登録 (サインアップ)
                         </h2>
                         <p class="text-xs text-slate-400 mt-1">新しいアカウントを作成し、希望する役職を付与して利用開始します。</p>
+                    </div>
+
+                    <!-- サインアップ エラー・成功インラインアラート -->
+                    <div id="signup-error-alert" class="hidden p-3.5 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-300 text-xs font-bold mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-circle-exclamation text-rose-400 text-base shrink-0"></i>
+                        <span id="signup-error-text">登録エラーが発生しました。</span>
+                    </div>
+                    <div id="signup-success-alert" class="hidden p-3.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-circle-check text-emerald-400 text-base shrink-0 animate-bounce"></i>
+                        <span id="signup-success-text">アカウントを作成しました。画面を切り替えています...</span>
                     </div>
 
                     <form id="signup-form" class="space-y-4">
