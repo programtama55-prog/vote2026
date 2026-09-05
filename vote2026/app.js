@@ -183,10 +183,10 @@ function initEventListeners() {
     
     if (state.furiganaEnabled) {
       document.body.classList.remove('hide-furigana');
-      btnText.innerText = 'ふりがな を はずす';
+      btnText.innerText = 'ふりがな ON';
     } else {
       document.body.classList.add('hide-furigana');
-      btnText.innerText = 'ふりがな を つける';
+      btnText.innerText = 'ふりがな OFF';
     }
   });
 
@@ -240,28 +240,77 @@ function initEventListeners() {
 }
 
 // --- MAIN TAB SWITCHING (3 MAIN TABS) ---
+// ボトムナビの各タブのカラー設定
+const TAB_COLORS = {
+  'top':                 { icon: '#4ea8de', bg: '#eff6ff', indicator: '#4ea8de' },
+  'workshop':            { icon: '#06d6a0', bg: '#ecfdf5', indicator: '#06d6a0' },
+  'candidates-answers':  { icon: '#f77f00', bg: '#fff7ed', indicator: '#f77f00' }
+};
+
 export function switchMainTab(tabName) {
   state.activeMainTab = tabName;
 
   const mainTabs = {
-    'top': { btn: document.getElementById('main-tab-top'), sec: document.getElementById('section-top'), color: 'bg-kids-blue' },
-    'workshop': { btn: document.getElementById('main-tab-workshop'), sec: document.getElementById('section-workshop'), color: 'bg-kids-green' },
-    'candidates-answers': { btn: document.getElementById('main-tab-candidates-answers'), sec: document.getElementById('section-candidates-answers'), color: 'bg-kids-orange' }
+    'top': {
+      btn: document.getElementById('main-tab-top'),
+      sec: document.getElementById('section-top')
+    },
+    'workshop': {
+      btn: document.getElementById('main-tab-workshop'),
+      sec: document.getElementById('section-workshop')
+    },
+    'candidates-answers': {
+      btn: document.getElementById('main-tab-candidates-answers'),
+      sec: document.getElementById('section-candidates-answers')
+    }
   };
 
   Object.keys(mainTabs).forEach(key => {
     const isTarget = key === tabName;
-    const btn = mainTabs[key].btn;
-    const sec = mainTabs[key].sec;
+    const { btn, sec } = mainTabs[key];
+    if (!btn || !sec) return;
+
+    // --- セクション表示切り替え ---
+    if (isTarget) {
+      sec.style.display = 'block';
+    } else {
+      sec.style.display = 'none';
+    }
+
+    // --- ボトムナビ ビジュアル更新 ---
+    const iconSpan      = btn.querySelector('.bottom-nav-icon');
+    const labelSpan     = btn.querySelector('.bottom-nav-label');
+    const indicatorSpan = btn.querySelector('.bottom-nav-indicator');
 
     if (isTarget) {
-      btn.className = `px-6 py-4 rounded-2xl border-3 border-slate-800 ${mainTabs[key].color} text-white text-base sm:text-lg font-black shadow-[4px_4px_0_#1e293b] active:translate-x-0.5 active:translate-y-0.5 transition-all flex items-center gap-2.5 scale-105`;
-      sec.classList.remove('hidden');
+      const colors = TAB_COLORS[key];
+      if (iconSpan) {
+        iconSpan.style.backgroundColor = colors.bg;
+        iconSpan.style.color           = colors.icon;
+      }
+      if (labelSpan) {
+        labelSpan.style.color = colors.icon;
+      }
+      if (indicatorSpan) {
+        indicatorSpan.style.width = '2rem';
+        indicatorSpan.style.backgroundColor = colors.indicator;
+      }
     } else {
-      btn.className = `px-6 py-4 rounded-2xl border-3 border-slate-800 bg-white text-base sm:text-lg font-black text-slate-800 shadow-[4px_4px_0_#1e293b] hover:bg-slate-50 active:translate-x-0.5 active:translate-y-0.5 transition-all flex items-center gap-2.5`;
-      sec.classList.add('hidden');
+      if (iconSpan) {
+        iconSpan.style.backgroundColor = 'transparent';
+        iconSpan.style.color           = '#94a3b8';
+      }
+      if (labelSpan) {
+        labelSpan.style.color = '#94a3b8';
+      }
+      if (indicatorSpan) {
+        indicatorSpan.style.width = '0';
+      }
     }
   });
+
+  // タブ切り替え時にページトップへスクロール（コンテンツが見えやすいように）
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 
   // Content render on activation
   if (tabName === 'top') renderTopSection();
@@ -288,10 +337,10 @@ export function switchWorkshopSubtab(subtabName) {
 
     if (isTarget) {
       btn.className = "px-4 py-2.5 rounded-xl border-2 border-slate-800 bg-kids-green text-slate-900 font-black text-xs sm:text-sm shadow-[2px_2px_0_#000] transition-all flex items-center gap-1.5";
-      panel.classList.remove('hidden');
+      panel.style.display = 'block';
     } else {
       btn.className = "px-4 py-2.5 rounded-xl border-2 border-slate-800 bg-white text-slate-700 font-black text-xs sm:text-sm hover:bg-slate-100 transition-all flex items-center gap-1.5";
-      panel.classList.add('hidden');
+      panel.style.display = 'none';
     }
   });
 
@@ -319,10 +368,10 @@ export function switchCandidatesSubtab(subtabName) {
 
     if (isTarget) {
       btn.className = "px-5 py-2.5 rounded-xl border-2 border-slate-800 bg-kids-orange text-white font-black text-xs sm:text-sm shadow-[2px_2px_0_#000] transition-all flex items-center gap-1.5";
-      panel.classList.remove('hidden');
+      panel.style.display = 'block';
     } else {
       btn.className = "px-5 py-2.5 rounded-xl border-2 border-slate-800 bg-white text-slate-700 font-black text-xs sm:text-sm hover:bg-slate-100 transition-all flex items-center gap-1.5";
-      panel.classList.add('hidden');
+      panel.style.display = 'none';
     }
   });
 

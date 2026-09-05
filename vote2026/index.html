@@ -90,6 +90,53 @@
         .animate-float-emoji {
             animation: floatEmoji 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards;
         }
+
+        /* ===== BOTTOM NAVIGATION BAR STYLES ===== */
+        /* Default (inactive) state */
+        .bottom-nav-btn .bottom-nav-icon {
+            background: transparent;
+            color: #94a3b8; /* slate-400 */
+        }
+        .bottom-nav-btn .bottom-nav-label {
+            color: #94a3b8; /* slate-400 */
+        }
+        .bottom-nav-btn .bottom-nav-indicator {
+            width: 0;
+        }
+
+        /* Active state — injected by JS as data-tab-active on the button */
+        .bottom-nav-btn.is-active[data-color="blue"] .bottom-nav-icon {
+            background: #eff6ff; /* blue-50 */
+            color: #4ea8de;
+        }
+        .bottom-nav-btn.is-active[data-color="blue"] .bottom-nav-label { color: #4ea8de; }
+        .bottom-nav-btn.is-active[data-color="blue"] .bottom-nav-indicator { width: 2rem; }
+
+        .bottom-nav-btn.is-active[data-color="green"] .bottom-nav-icon {
+            background: #ecfdf5;
+            color: #06d6a0;
+        }
+        .bottom-nav-btn.is-active[data-color="green"] .bottom-nav-label { color: #06d6a0; }
+        .bottom-nav-btn.is-active[data-color="green"] .bottom-nav-indicator { width: 2rem; }
+
+        .bottom-nav-btn.is-active[data-color="orange"] .bottom-nav-icon {
+            background: #fff7ed;
+            color: #f77f00;
+        }
+        .bottom-nav-btn.is-active[data-color="orange"] .bottom-nav-label { color: #f77f00; }
+        .bottom-nav-btn.is-active[data-color="orange"] .bottom-nav-indicator { width: 2rem; }
+
+        /* Tap feedback */
+        .bottom-nav-btn:active .bottom-nav-icon {
+            transform: scale(0.90);
+        }
+
+        /* Safe area for iPhone home bar */
+        @supports (padding-bottom: env(safe-area-inset-bottom)) {
+            #bottom-nav > div {
+                padding-bottom: env(safe-area-inset-bottom);
+            }
+        }
     </style>
 
     <!-- Import Map definition to allow module-based relative path alias '@/' -->
@@ -108,72 +155,49 @@
     <!-- Toast Notification Container -->
     <div id="toast-container" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none flex flex-col items-center gap-2 max-w-sm w-full px-4"></div>
 
-    <!-- Header Navigation -->
-    <header class="sticky top-0 z-30 bg-white/95 border-b-4 border-yellow-300 backdrop-blur-md shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
+    <!-- Header Navigation (simplified) -->
+    <header class="sticky top-0 z-30 bg-white/98 border-b-2 border-yellow-300 backdrop-blur-md shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
             <!-- App Logo & Title -->
-            <div class="flex items-center gap-3">
-                <div class="w-12 h-12 rounded-2xl bg-kids-yellow flex items-center justify-center text-slate-800 shadow-md border-3 border-slate-800 shrink-0">
-                    <span class="text-2xl">🗳️</span>
+            <div class="flex items-center gap-2.5 shrink-0">
+                <div class="w-10 h-10 rounded-xl bg-kids-yellow flex items-center justify-center text-slate-800 shadow border-2 border-slate-800 shrink-0">
+                    <span class="text-xl">🗳️</span>
                 </div>
                 <div>
-                    <h1 class="text-xl sm:text-2xl font-black text-slate-900 tracking-wider flex items-center gap-2">
+                    <h1 class="text-lg font-black text-slate-900 tracking-wider leading-tight">
                         <ruby>こども選<rt>せん</rt>挙<rt>きょ</rt></ruby>
-                        <span class="text-[0.6em] font-black px-2.5 py-0.5 rounded-full bg-kids-blue text-white border-2 border-slate-800 uppercase tracking-widest hidden sm:inline-block">PWA</span>
                     </h1>
-                    <p class="text-xs text-slate-500 font-bold hidden md:block">
-                        こどもたちの<ruby>声<rt>こえ</rt></ruby>が、まちの<ruby>未来<rt>みらい</rt></ruby>をつくる！
+                    <p class="text-[0.6rem] text-slate-400 font-bold hidden sm:block leading-none">
+                        みんなの<ruby>未来<rt>みらい</rt></ruby>をえらぶ場所
                     </p>
                 </div>
             </div>
 
-            <!-- Global Controls: Furigana & Election Selector & Staff Auth Widget -->
-            <div class="flex items-center gap-2 sm:gap-3">
+            <!-- Right Controls -->
+            <div class="flex items-center gap-1.5 sm:gap-2">
                 <!-- Furigana Switcher Button -->
-                <button id="furigana-toggle-btn" class="px-3.5 py-2 text-xs sm:text-sm font-black text-slate-800 bg-white rounded-xl border-2 border-slate-800 shadow-[2px_2px_0_#000] hover:bg-orange-50 active:translate-x-0.5 active:translate-y-0.5 active:shadow-[0_0_0_#000] transition-all flex items-center gap-1.5">
-                    <i class="fa-solid fa-language text-kids-orange text-base"></i>
-                    <span id="furigana-btn-text">ふりがな を はずす</span>
+                <button id="furigana-toggle-btn" class="px-2.5 py-1.5 text-[0.7rem] font-black text-slate-700 bg-orange-50 rounded-lg border-2 border-slate-800 shadow-[1px_1px_0_#000] hover:bg-orange-100 active:translate-x-px active:translate-y-px transition-all flex items-center gap-1">
+                    <i class="fa-solid fa-language text-kids-orange text-sm"></i>
+                    <span id="furigana-btn-text" class="hidden sm:inline">ふりがな OFF</span>
                 </button>
 
                 <!-- Election Selector Dropdown -->
-                <select id="election-select" class="px-3 py-2 bg-white border-2 border-slate-800 rounded-xl text-xs sm:text-sm font-bold text-slate-800 cursor-pointer shadow-[2px_2px_0_#000] focus:outline-none">
+                <select id="election-select" class="px-2 py-1.5 bg-white border-2 border-slate-800 rounded-lg text-[0.7rem] sm:text-xs font-bold text-slate-800 cursor-pointer shadow-[1px_1px_0_#000] focus:outline-none max-w-[120px] sm:max-w-[180px]">
                     <option value="">-- 選挙をえらぶ --</option>
                 </select>
 
-                <!-- Admin / Staff Auth Portal Widget -->
-                <div id="index-auth-widget" class="flex items-center gap-1 pl-2 border-l-2 border-slate-200">
-                    <a href="./login.html" title="スタッフログイン・管理" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition-all shadow-[2px_2px_0_#000] flex items-center gap-1.5">
-                        <i class="fa-solid fa-user-shield text-yellow-400"></i>
-                        <span class="hidden md:inline">スタッフログイン</span>
+                <!-- Staff Login -->
+                <div id="index-auth-widget">
+                    <a href="./login.html" title="スタッフログイン" class="w-9 h-9 rounded-lg bg-slate-800 hover:bg-slate-700 text-white transition-all shadow-[1px_1px_0_#000] flex items-center justify-center">
+                        <i class="fa-solid fa-user-shield text-yellow-400 text-sm"></i>
                     </a>
                 </div>
             </div>
         </div>
     </header>
 
-    <!-- Main Container -->
-    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-
-        <!-- PRIMARY NAVIGATION TABS (3 MAIN TABS REQUIREMENT) -->
-        <nav class="flex flex-wrap justify-center gap-3 sm:gap-5 mb-8">
-            <!-- TAB 1: トップページ -->
-            <button id="main-tab-top" class="px-6 py-4 rounded-2xl border-3 border-slate-800 bg-white text-base sm:text-lg font-black text-slate-800 shadow-[4px_4px_0_#1e293b] active:translate-x-0.5 active:translate-y-0.5 transition-all flex items-center gap-2.5">
-                <i class="fa-solid fa-house text-kids-blue text-xl"></i>
-                <ruby>トップページ<rt>とっぷぺーじ</rt></ruby>
-            </button>
-
-            <!-- TAB 2: ワークショップ -->
-            <button id="main-tab-workshop" class="px-6 py-4 rounded-2xl border-3 border-slate-800 bg-white text-base sm:text-lg font-black text-slate-800 shadow-[4px_4px_0_#1e293b] active:translate-x-0.5 active:translate-y-0.5 transition-all flex items-center gap-2.5">
-                <i class="fa-solid fa-compass text-kids-green text-xl"></i>
-                <ruby>ワークショップ<rt>わーくしょっぷ</rt></ruby>
-            </button>
-
-            <!-- TAB 3: 立候補者の回答 -->
-            <button id="main-tab-candidates-answers" class="px-6 py-4 rounded-2xl border-3 border-slate-800 bg-white text-base sm:text-lg font-black text-slate-800 shadow-[4px_4px_0_#1e293b] active:translate-x-0.5 active:translate-y-0.5 transition-all flex items-center gap-2.5">
-                <i class="fa-solid fa-comments text-kids-orange text-xl"></i>
-                <ruby>立候補者の回答<rt>りっこうほしゃのかいとう</rt></ruby>
-            </button>
-        </nav>
+    <!-- Main Container (bottom padding accounts for the fixed bottom nav) -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-28">
 
         <!-- Loader Indicator -->
         <div id="section-loader" class="flex flex-col items-center justify-center py-12 space-y-3 hidden">
@@ -185,7 +209,7 @@
         <!-- =================================================================== -->
         <!-- TAB 1: トップページ (TOP PAGE SECTION - P01, P12) -->
         <!-- =================================================================== -->
-        <section id="section-top" class="space-y-8 hidden">
+        <section id="section-top" class="space-y-8" style="display:block">
             <!-- Hero banner -->
             <div class="bg-gradient-to-r from-kids-blue/80 via-kids-green/40 to-kids-yellow/50 border-4 border-slate-800 rounded-3xl p-6 sm:p-10 shadow-[6px_6px_0_#1e293b] flex flex-col md:flex-row items-center justify-between gap-6">
                 <div class="space-y-4 max-w-xl text-center md:text-left">
@@ -341,7 +365,7 @@
         <!-- =================================================================== -->
         <!-- TAB 2: ワークショップ (WORKSHOP SECTION - P02, P03, P05, P07, P08) -->
         <!-- =================================================================== -->
-        <section id="section-workshop" class="space-y-8 hidden">
+        <section id="section-workshop" class="space-y-8" style="display:none">
             <!-- Workshop Header Banner -->
             <div class="bg-gradient-to-r from-kids-green/30 via-kids-yellow/30 to-kids-blue/20 border-3 border-slate-800 rounded-3xl p-6 sm:p-8 shadow-[4px_4px_0_#1e293b] flex flex-col md:flex-row items-center justify-between gap-4">
                 <div class="space-y-2 text-center md:text-left">
@@ -377,7 +401,7 @@
             </div>
 
             <!-- SUB-PANEL 1: 📖 会議の記録 (WS ARCHIVES - P02) -->
-            <div id="ws-panel-archive" class="space-y-6 hidden">
+            <div id="ws-panel-archive" class="space-y-6" style="display:none">
                 <div class="text-center space-y-1">
                     <h3 class="text-xl font-black text-slate-900">📖 ワークショップのきろく</h3>
                     <p class="text-xs sm:text-sm font-bold text-slate-500">こどもたちが実際にあつまって行われた探検や話し合いのレポートです。</p>
@@ -388,7 +412,7 @@
             </div>
 
             <!-- SUB-PANEL 2: 🗺️ まちの課題 (ISSUES - P03) -->
-            <div id="ws-panel-issues" class="space-y-6 hidden">
+            <div id="ws-panel-issues" class="space-y-6" style="display:none">
                 <div class="text-center space-y-1">
                     <h3 class="text-xl font-black text-slate-900">🗺️ まちの課題・意見一覧</h3>
                     <p class="text-xs sm:text-sm font-bold text-slate-500">ワークショップで出された「まちの困りごと」や「アイデア」です。</p>
@@ -410,7 +434,7 @@
             </div>
 
             <!-- SUB-PANEL 3: 🌟 えらばれた質問 (OFFICIAL QUESTIONS - P05, P06) -->
-            <div id="ws-panel-official" class="space-y-6 hidden">
+            <div id="ws-panel-official" class="space-y-6" style="display:none">
                 <div class="text-center space-y-1">
                     <h3 class="text-xl font-black text-slate-900">🌟 こどもたちが選んだ公式質問</h3>
                     <p class="text-xs sm:text-sm font-bold text-slate-500">たくさんの意見の中から、立候補者に尋ねるために子供たちが決定した質問です。</p>
@@ -421,7 +445,7 @@
             </div>
 
             <!-- SUB-PANEL 4: 🎮 質問選定体験 (QUIZ SIMULATION - P07) -->
-            <div id="ws-panel-quiz" class="space-y-6 hidden">
+            <div id="ws-panel-quiz" class="space-y-6" style="display:none">
                 <div class="text-center space-y-1">
                     <h3 class="text-xl font-black text-slate-900">🎮 あなたならどの質問を選ぶ？（選定追体験）</h3>
                     <p class="text-xs sm:text-sm font-bold text-slate-500">提示された質問の中から、あなたが最も重要だと思う質問を選んでみよう！</p>
@@ -450,7 +474,7 @@
             </div>
 
             <!-- SUB-PANEL 5: 📮 追加質問の投稿 (SUBMIT QUESTION - P08) -->
-            <div id="ws-panel-submit" class="space-y-6 hidden">
+            <div id="ws-panel-submit" class="space-y-6" style="display:none">
                 <div class="text-center space-y-1">
                     <h3 class="text-xl font-black text-slate-900">📮 候補者への質問を投稿する</h3>
                     <p class="text-xs sm:text-sm font-bold text-slate-500">あなたの考える「まちの疑問」を投稿してみよう！（※承認後に公開されます）</p>
@@ -520,7 +544,7 @@
         <!-- =================================================================== -->
         <!-- TAB 3: 立候補者の回答 (CANDIDATES' ANSWERS SECTION - P09, P10, P11) -->
         <!-- =================================================================== -->
-        <section id="section-candidates-answers" class="space-y-8 hidden">
+        <section id="section-candidates-answers" class="space-y-8" style="display:none">
             <!-- Candidates Header Banner -->
             <div class="bg-gradient-to-r from-kids-orange/30 via-kids-yellow/40 to-kids-purple/20 border-3 border-slate-800 rounded-3xl p-6 sm:p-8 shadow-[4px_4px_0_#1e293b] flex flex-col md:flex-row items-center justify-between gap-4">
                 <div class="space-y-2 text-center md:text-left">
@@ -550,7 +574,7 @@
             </div>
 
             <!-- SUB-PANEL 1: ⚖️ 回答を比較する (COMPARISON & REACTION - P10, P11) -->
-            <div id="cand-panel-comparison" class="space-y-6 hidden">
+            <div id="cand-panel-comparison" class="space-y-6" style="display:none">
                 <div class="bg-white border-3 border-slate-800 rounded-3xl p-5 sm:p-6 shadow-[4px_4px_0_#1e293b] space-y-4">
                     <h3 class="text-base sm:text-lg font-black text-slate-900 flex items-center gap-2">
                         <span class="w-8 h-8 rounded-full bg-kids-orange text-white flex items-center justify-center text-sm font-black">Q</span>
@@ -585,7 +609,7 @@
             </div>
 
             <!-- SUB-PANEL 2: 👤 候補者一覧 (CANDIDATES PROFILES - P09) -->
-            <div id="cand-panel-profiles" class="space-y-6 hidden">
+            <div id="cand-panel-profiles" class="space-y-6" style="display:none">
                 <div class="text-center space-y-1">
                     <h3 class="text-xl font-black text-slate-900">👤 立候補した人たちのプロフィール</h3>
                     <p class="text-xs sm:text-sm font-bold text-slate-500">※表示順は公平性を保つため、ページを開くごとにランダムで並び替わります。</p>
@@ -596,7 +620,7 @@
             </div>
 
             <!-- SUB-PANEL 3: 💡 「自分が知事なら」みんなの意見 (MY GOVERNOR POSTS) -->
-            <div id="cand-panel-ideas" class="space-y-6 hidden">
+            <div id="cand-panel-ideas" class="space-y-6" style="display:none">
                 <div class="text-center space-y-1">
                     <h3 class="text-xl font-black text-slate-900">💡 「自分が知事・市長ならこんなまちにしたい！」掲示板</h3>
                     <p class="text-xs sm:text-sm font-bold text-slate-500">候補者だけでなく、みんなの自由なアイディアも投稿＆シェアしてみよう！</p>
@@ -656,17 +680,94 @@
         </div>
     </div>
 
-    <!-- Footer -->
-    <footer class="mt-auto border-t-4 border-slate-200 bg-white py-8">
-        <div class="max-w-7xl mx-auto px-4 text-center space-y-3">
-            <p class="text-xs sm:text-sm font-bold text-slate-500">
-                © 2026 こども選挙事務局 - 子どもたちが学び、選び、つながる未来へ。
+    <!-- ======================================================= -->
+    <!-- BOTTOM NAVIGATION BAR (replaces top tab nav & footer)   -->
+    <!-- ======================================================= -->
+    <nav id="bottom-nav" class="fixed bottom-0 left-0 right-0 z-40 bg-white/98 backdrop-blur-xl border-t-2 border-slate-200 shadow-[0_-4px_24px_rgba(0,0,0,0.10)]">
+        <div class="max-w-lg mx-auto flex items-stretch h-[72px] safe-area-inset-bottom">
+
+            <!-- TAB 1: トップ -->
+            <button id="main-tab-top"
+                    onclick="document.getElementById('section-top').style.display='block'; document.getElementById('section-workshop').style.display='none'; document.getElementById('section-candidates-answers').style.display='none'; if(window.switchMainTab) window.switchMainTab('top');"
+                    class="bottom-nav-btn flex-1 flex flex-col items-center justify-center gap-0.5 px-2 py-2 transition-all relative group"
+                    aria-label="トップページ">
+                <!-- Active indicator bar -->
+                <span class="bottom-nav-indicator absolute top-0 left-1/2 -translate-x-1/2 h-[3px] w-0 rounded-b-full bg-kids-blue transition-all duration-300"></span>
+                <span class="bottom-nav-icon w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-200">
+                    <i class="fa-solid fa-house text-lg transition-colors"></i>
+                </span>
+                <span class="bottom-nav-label text-[0.6rem] font-black transition-colors"><ruby>トップ<rt>とっぷ</rt></ruby></span>
+            </button>
+
+            <!-- TAB 2: ワークショップ -->
+            <button id="main-tab-workshop"
+                    onclick="document.getElementById('section-top').style.display='none'; document.getElementById('section-workshop').style.display='block'; document.getElementById('section-candidates-answers').style.display='none'; if(window.switchMainTab) window.switchMainTab('workshop');"
+                    class="bottom-nav-btn flex-1 flex flex-col items-center justify-center gap-0.5 px-2 py-2 transition-all relative group"
+                    aria-label="ワークショップ">
+                <span class="bottom-nav-indicator absolute top-0 left-1/2 -translate-x-1/2 h-[3px] w-0 rounded-b-full bg-kids-green transition-all duration-300"></span>
+                <span class="bottom-nav-icon w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-200">
+                    <i class="fa-solid fa-compass text-lg transition-colors"></i>
+                </span>
+                <span class="bottom-nav-label text-[0.6rem] font-black transition-colors"><ruby>ワーク<rt>わーく</rt></ruby></span>
+            </button>
+
+            <!-- CENTER: 選挙ロゴ / 装飾ボタン -->
+            <div class="flex-1 flex flex-col items-center justify-center px-2 py-2 pointer-events-none select-none">
+                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-kids-yellow to-kids-orange border-2 border-slate-800 shadow-[2px_2px_0_#1e293b] flex items-center justify-center">
+                    <span class="text-2xl">🗳️</span>
+                </div>
+            </div>
+
+            <!-- TAB 3: 立候補者の回答 -->
+            <button id="main-tab-candidates-answers"
+                    onclick="document.getElementById('section-top').style.display='none'; document.getElementById('section-workshop').style.display='none'; document.getElementById('section-candidates-answers').style.display='block'; if(window.switchMainTab) window.switchMainTab('candidates-answers');"
+                    class="bottom-nav-btn flex-1 flex flex-col items-center justify-center gap-0.5 px-2 py-2 transition-all relative group"
+                    aria-label="立候補者の回答">
+                <span class="bottom-nav-indicator absolute top-0 left-1/2 -translate-x-1/2 h-[3px] w-0 rounded-b-full bg-kids-orange transition-all duration-300"></span>
+                <span class="bottom-nav-icon w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-200">
+                    <i class="fa-solid fa-comments text-lg transition-colors"></i>
+                </span>
+                <span class="bottom-nav-label text-[0.6rem] font-black transition-colors"><ruby>回答<rt>かいとう</rt></ruby></span>
+            </button>
+
+            <!-- More / Info -->
+            <button id="bottom-nav-info"
+                    class="flex-1 flex flex-col items-center justify-center gap-0.5 px-2 py-2 text-slate-400 hover:text-slate-600 transition-all relative"
+                    aria-label="このサイトについて"
+                    onclick="document.getElementById('bottom-info-sheet').classList.toggle('translate-y-full')">
+                <span class="w-10 h-10 rounded-2xl flex items-center justify-center">
+                    <i class="fa-solid fa-circle-info text-lg"></i>
+                </span>
+                <span class="text-[0.6rem] font-black">情報</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Info bottom sheet (slides up when info button is tapped) -->
+    <div id="bottom-info-sheet" class="fixed inset-x-0 bottom-0 z-50 translate-y-full transition-transform duration-300 ease-in-out">
+        <div class="bg-white rounded-t-3xl border-t-4 border-slate-800 shadow-[0_-8px_32px_rgba(0,0,0,0.15)] p-6 pb-10">
+            <div class="w-10 h-1 bg-slate-200 rounded-full mx-auto mb-5"></div>
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-12 h-12 rounded-2xl bg-kids-yellow border-2 border-slate-800 flex items-center justify-center text-2xl shadow">🗳️</div>
+                <div>
+                    <div class="text-base font-black text-slate-900">こども選挙ポータル</div>
+                    <div class="text-xs text-slate-400 font-bold">© 2026 こども選挙事務局</div>
+                </div>
+            </div>
+            <p class="text-xs text-slate-500 font-bold leading-relaxed mb-4">
+                本アプリは「こども選挙 デジタル参加・運営支援アプリ」として制作されています。<br>
+                子どもたちが学び、選び、つながる未来へ。
             </p>
-            <div class="text-[0.65rem] sm:text-xs text-slate-400">
-                本アプリは「こども選挙 デジタル参加・運営支援アプリ システム基本設計書」に基づき制作されています。
+            <div class="flex gap-2">
+                <a href="./login.html" class="flex-1 py-2.5 rounded-xl bg-slate-800 text-white text-xs font-black text-center flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-user-shield text-yellow-400"></i> スタッフログイン
+                </a>
+                <button onclick="document.getElementById('bottom-info-sheet').classList.add('translate-y-full')" class="flex-1 py-2.5 rounded-xl bg-slate-100 text-slate-700 text-xs font-black text-center border border-slate-200">
+                    閉じる
+                </button>
             </div>
         </div>
-    </footer>
+    </div>
 
     <!-- Service Worker Registration for PWA -->
     <script>
