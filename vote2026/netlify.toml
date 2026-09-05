@@ -1,0 +1,11 @@
+[build]
+  # 公開するディレクトリ（静的HTML/JS/CSSアプリのためルートディレクトリを指定）
+  publish = "."
+
+# セキュリティヘッダー等の基本設定
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
