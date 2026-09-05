@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="ja" class="h-full bg-slate-950 text-slate-100">
+<html lang="ja" class="h-full bg-slate-900 text-slate-100">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AuthCore - 安全なセッション管理システム</title>
-    <meta name="description" content="AuthCore 認証・アカウント管理プラットフォーム">
+    <title>こども選挙 - スタッフログイン & 役職管理</title>
+    <meta name="description" content="こども選挙の運営・開票担当者・管理者用ログインポータル">
     
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -12,6 +12,13 @@
         tailwind.config = {
             theme: {
                 extend: {
+                    colors: {
+                        dash: {
+                            bg: '#0f172a',
+                            card: '#1e293b',
+                            accent: '#6366f1'
+                        }
+                    },
                     fontFamily: {
                         sans: ['Inter', 'Noto Sans JP', 'sans-serif'],
                     }
@@ -20,15 +27,28 @@
         }
     </script>
     
-    <!-- Google Fonts & Lucide Icons -->
+    <!-- Google Fonts, Lucide & Font Awesome Icons -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
-    <!-- Supabase Environment Config & Import Map -->
+    <!-- React 18 & ReactDOM 18 UMD -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Noto Sans JP', 'Inter', sans-serif;
+            background-color: #0f172a;
+        }
+    </style>
+
+    <!-- Supabase Environment Config -->
     <script src="./env.js"></script>
+
+    <!-- Import Map definition -->
     <script type="importmap">
         {
             "imports": {
@@ -39,40 +59,1040 @@
         }
     </script>
 </head>
-<body class="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between selection:bg-indigo-500 selection:text-white relative overflow-hidden font-sans antialiased">
-    <!-- 背景のグローエフェクト -->
-    <div class="absolute -top-40 -left-40 w-96 h-96 bg-indigo-600/20 rounded-full blur-3xl pointer-events-none"></div>
-    <div class="absolute -bottom-40 -right-40 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl pointer-events-none"></div>
+<body class="min-h-full flex flex-col text-slate-200 antialiased bg-slate-900 relative selection:bg-indigo-500 selection:text-white">
 
-    <!-- トースト通知コンテナ -->
-    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2"></div>
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
-    <!-- ヘッダー -->
-    <header class="px-6 py-4 border-b border-slate-800/80 flex items-center justify-between backdrop-blur-sm z-10">
-        <div class="flex items-center gap-2">
-            <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center shadow-lg shadow-indigo-500/30">
-                <i data-lucide="layers" class="w-4 h-4 text-white"></i>
+    <!-- Header Navigation -->
+    <header class="sticky top-0 z-30 bg-slate-800/90 border-b border-slate-700/60 backdrop-blur-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xl shadow-lg shadow-indigo-500/20">
+                    <i class="fa-solid fa-user-shield"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-wider text-white flex items-center gap-2">
+                        こども選挙 <span class="text-xs px-2.5 py-1 rounded-full bg-slate-700 text-indigo-300 font-semibold border border-slate-600">スタッフポータル</span>
+                    </h1>
+                    <p class="text-xs text-slate-400 font-medium">役職認証・権限管理システム</p>
+                </div>
             </div>
-            <span class="font-bold tracking-tight text-lg bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
-                AuthCore
-            </span>
+
+            <div class="flex items-center gap-2.5">
+                <button type="button" id="btn-open-supabase-config" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition flex items-center gap-2" title="Supabase接続設定">
+                    <i class="fa-solid fa-database text-indigo-400"></i>
+                    <span class="hidden sm:inline">DB接続設定</span>
+                </button>
+                <a href="./index.html" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-700/60 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-600/60 transition flex items-center gap-2">
+                    <i class="fa-solid fa-house"></i>
+                    <span>一般ポータル</span>
+                </a>
+                <div id="header-user-widget"></div>
+            </div>
         </div>
-        <div id="header-user-actions" class="flex items-center gap-3 text-sm"></div>
     </header>
 
-    <!-- メインコンテンツ -->
-    <main class="flex-1 flex items-center justify-center p-4 z-10">
-        <div class="w-full max-w-md" id="app-view-container">
-            <!-- JSによって login | register | forgot | dashboard 画面が動的描画されます -->
+    <!-- Main Container -->
+    <main class="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
+
+        <!-- 警報・リダイレクト通知メッセージ -->
+        <div id="redirect-alert" class="hidden p-4 rounded-2xl border bg-amber-500/10 border-amber-500/30 text-amber-300 flex items-start gap-3">
+            <i class="fa-solid fa-triangle-exclamation text-xl shrink-0 mt-0.5"></i>
+            <div>
+                <h3 class="font-bold text-sm" id="alert-title">アクセス制限</h3>
+                <p class="text-xs text-amber-200/80 mt-1" id="alert-message">この機能を利用するには適切な役職でログインする必要があります。</p>
+            </div>
+        </div>
+
+        <!-- ログイン中の場合の上部ステータス表示 -->
+        <div id="current-session-banner" class="hidden p-6 rounded-3xl bg-slate-800/80 border border-slate-700/80 shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div class="flex items-center gap-4">
+                <div class="w-14 h-14 rounded-2xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center text-2xl">
+                    <i class="fa-solid fa-circle-user"></i>
+                </div>
+                <div>
+                    <div class="text-xs text-slate-400 font-bold uppercase tracking-wider">現在ログイン中のアカウント</div>
+                    <div class="text-lg font-bold text-white flex items-center gap-2 mt-0.5">
+                        <span id="session-user-name">---</span>
+                        <span id="session-user-role-badge">---</span>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-1">ID: <span id="session-username" class="font-mono text-slate-300">---</span></p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <button id="btn-session-logout" class="px-4 py-2.5 rounded-xl text-xs font-bold bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 transition flex items-center gap-2">
+                    <i class="fa-solid fa-right-from-bracket"></i> ログアウト
+                </button>
+            </div>
+        </div>
+
+        <!-- スタッフポータル 2カラムレイアウト -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            
+            <!-- AuthCore ログインシステム パネル (React コンポーネント) -->
+            <div class="lg:col-span-6 relative overflow-hidden rounded-2xl">
+                <!-- 背景のグローエフェクト -->
+                <div class="absolute -top-20 -left-20 w-64 h-64 bg-indigo-600/20 rounded-full blur-3xl pointer-events-none"></div>
+                <div class="absolute -bottom-20 -right-20 w-64 h-64 bg-purple-600/20 rounded-full blur-3xl pointer-events-none"></div>
+
+                <div id="auth-panel-root"></div>
+            </div>
+
+            <!-- Supabase データベース接続ステータス -->
+            <div class="lg:col-span-6 space-y-4">
+                <div class="bg-slate-800/80 border border-slate-700/80 rounded-3xl p-6 shadow-xl space-y-5">
+                    <div class="flex items-center justify-between border-b border-slate-700/80 pb-4">
+                        <h2 class="text-sm font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-database text-emerald-400"></i> Supabase 本番DB接続ステータス
+                        </h2>
+                        <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                            接続有効
+                        </span>
+                    </div>
+
+                    <p class="text-xs text-slate-300 leading-relaxed">
+                        本システムは Supabase Auth および PostgreSQL データベースに直接接続して認証・権限管理を行っています。
+                    </p>
+
+                    <div class="space-y-3 bg-slate-900/80 p-4 rounded-2xl border border-slate-700/60 font-mono text-xs">
+                        <div>
+                            <div class="text-[0.65rem] text-slate-400 font-bold uppercase tracking-wider mb-1">プロジェクト URL (.env)</div>
+                            <div class="text-indigo-300 font-semibold truncate" id="display-supabase-url">https://yuxvrgkmjorzcgrtjmoz.supabase.co</div>
+                        </div>
+                        <div class="pt-2 border-t border-slate-800">
+                            <div class="text-[0.65rem] text-slate-400 font-bold uppercase tracking-wider mb-1">認証方式</div>
+                            <div class="text-emerald-400 font-semibold flex items-center gap-2">
+                                <i class="fa-solid fa-lock"></i> Supabase Auth (JWT + RLS 認可)
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-200/90 space-y-2">
+                        <div class="font-bold flex items-center gap-1.5 text-amber-300">
+                            <i class="fa-solid fa-shield"></i> 管理者パネルへのアクセス権限
+                        </div>
+                        <p class="text-[0.75rem] leading-relaxed">
+                            役割「<strong class="text-amber-300">管理者</strong>」でログインまたは新規登録した場合のみ、<strong>管理者パネル (admin.html)</strong> へのアクセスおよびボタンが表示されます。<br>
+                            運営・開票担当者アカウントでログインした場合はそれぞれの担当画面へ移動します。
+                        </p>
+                    </div>
+                </div>
+            </div>
         </div>
     </main>
 
-    <!-- フッター -->
-    <footer class="py-4 text-center text-xs text-slate-500 border-t border-slate-900 z-10">
-        &copy; 2026 AuthCore Platform. 安全なセッション管理システム
+    <!-- Footer -->
+    <footer class="bg-slate-900 border-t border-slate-800 py-6 mt-12 text-center text-xs text-slate-500">
+        <div class="max-w-7xl mx-auto px-4">
+            <p>こども選挙 システム運営事務局 &copy; 2026 - 役割ベースアクセス制御 (RBAC) 認証基盤</p>
+        </div>
     </footer>
 
-    <!-- Script -->
+    <!-- Supabase 接続設定モーダル -->
+    <div id="supabase-config-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-6">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+                <h3 class="text-base font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-database text-indigo-400"></i> Supabase 接続設定
+                </h3>
+                <button type="button" id="btn-close-supabase-config" class="text-slate-400 hover:text-white transition text-lg">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <p class="text-xs text-slate-400 leading-relaxed">
+                Supabase プロジェクトの URL と Anon Key を設定すると、本番DB認証に切り替わります。未設定時はデモ・ローカルモードで動作します。
+            </p>
+
+            <form id="supabase-config-form" class="space-y-4">
+                <div>
+                    <label for="cfg-supabase-url" class="block text-xs font-bold text-slate-300 mb-1.5">Supabase Project URL</label>
+                    <input type="url" id="cfg-supabase-url" placeholder="https://xxxx.supabase.co" class="w-full px-3.5 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-xs font-mono text-slate-100 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
+                </div>
+                <div>
+                    <label for="cfg-supabase-key" class="block text-xs font-bold text-slate-300 mb-1.5">Supabase Anon Key</label>
+                    <input type="text" id="cfg-supabase-key" placeholder="ey..." class="w-full px-3.5 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-xs font-mono text-slate-100 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
+                </div>
+
+                <div class="flex items-center justify-between pt-2">
+                    <button type="button" id="btn-clear-supabase-config" class="px-3 py-2 rounded-xl text-xs font-bold bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 transition">
+                        設定クリア (デモに戻す)
+                    </button>
+                    <button type="submit" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-indigo-600/30 transition flex items-center gap-2">
+                        <i class="fa-solid fa-floppy-disk"></i> 保存して適用
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- React Auth Panel script -->
+    <script type="text/babel">
+      const { useState, useMemo, useEffect } = React;
+
+      // Storage Keys for Data Persistence
+      const USERS_STORAGE_KEY = 'authcore_registered_users';
+      const CURRENT_USER_STORAGE_KEY = 'kodomo_senkyo_current_user';
+
+      const INITIAL_DEMO_USERS = [
+        {
+          id: 'demo-user-1',
+          name: 'デモユーザー',
+          email: 'demo@example.com',
+          password: 'Password123!',
+          role: '管理者',
+          createdAt: '2026-01-15'
+        }
+      ];
+
+      function loadSavedUsers() {
+        try {
+          const raw = localStorage.getItem(USERS_STORAGE_KEY);
+          if (raw) return JSON.parse(raw);
+        } catch (e) {}
+        try {
+          localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(INITIAL_DEMO_USERS));
+        } catch (e) {}
+        return INITIAL_DEMO_USERS;
+      }
+
+      function loadSavedCurrentUser() {
+        try {
+          const raw = localStorage.getItem(CURRENT_USER_STORAGE_KEY);
+          if (raw) return JSON.parse(raw);
+        } catch (e) {}
+        return null;
+      }
+
+      // Lucide Icon Components (SVG)
+      const User = ({ className = "w-4 h-4" }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>;
+      const Mail = ({ className = "w-4 h-4" }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>;
+      const Lock = ({ className = "w-4 h-4" }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>;
+      const Eye = ({ className = "w-4 h-4" }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>;
+      const EyeOff = ({ className = "w-4 h-4" }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.52 13.52 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>;
+      const CheckCircle2 = ({ className = "w-5 h-5" }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>;
+      const AlertCircle = ({ className = "w-5 h-5" }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>;
+      const ArrowRight = ({ className = "w-4 h-4" }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>;
+      const LogOut = ({ className = "w-4 h-4" }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>;
+      const ShieldCheck = ({ className = "w-5 h-5" }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>;
+      const KeyRound = ({ className = "w-5 h-5" }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 18v3c0 .6.4 1 1 1h4v-3h3v-3h2l1.4-1.4a6.5 6.5 0 1 0-4-4Z"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/></svg>;
+      const Sparkles = ({ className = "w-4 h-4" }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>;
+      const ChevronLeft = ({ className = "w-4 h-4" }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>;
+      const Calendar = ({ className = "w-4 h-4" }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>;
+      const Layers = ({ className = "w-4 h-4" }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>;
+      const Briefcase = ({ className = "w-4 h-4" }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>;
+      const Trash2 = ({ className = "w-4 h-4" }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>;
+
+      // EXACT REACT LOGIN SYSTEM COMPONENT
+      function AuthCorePanel() {
+        const [view, setView] = useState(() => (loadSavedCurrentUser() ? 'dashboard' : 'login'));
+        const [users, setUsers] = useState(loadSavedUsers);
+        const [currentUser, setCurrentUser] = useState(loadSavedCurrentUser);
+        const [toast, setToast] = useState(null);
+
+        // ユーザーリスト変更時に localStorage へ保存
+        useEffect(() => {
+          try {
+            localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
+          } catch (e) {}
+        }, [users]);
+
+        // ログインユーザー変更時に localStorage へ保存
+        useEffect(() => {
+          try {
+            if (currentUser) {
+              const sessionUser = {
+                id: currentUser.id,
+                name: currentUser.name,
+                email: currentUser.email,
+                username: currentUser.email.split('@')[0],
+                role: currentUser.role || '運営',
+                createdAt: currentUser.createdAt
+              };
+              localStorage.setItem(CURRENT_USER_STORAGE_KEY, JSON.stringify(sessionUser));
+            } else {
+              localStorage.removeItem(CURRENT_USER_STORAGE_KEY);
+            }
+          } catch (e) {}
+          if (window.refreshSessionBanner) window.refreshSessionBanner();
+          if (window.renderAuthHeaderWidget) window.renderAuthHeaderWidget('header-user-widget');
+        }, [currentUser]);
+
+        const showToast = (message, type = 'success') => {
+          setToast({ message, type });
+          setTimeout(() => {
+            setToast(null);
+          }, 4000);
+        };
+
+        // ログイン処理
+        const handleLogin = ({ email, password }) => {
+          const targetUser = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+
+          if (!targetUser) {
+            showToast('登録されていないメールアドレスです', 'error');
+            return false;
+          }
+
+          if (targetUser.password !== password) {
+            showToast('パスワードが正しくありません', 'error');
+            return false;
+          }
+
+          setCurrentUser(targetUser);
+          setView('dashboard');
+          showToast(`${targetUser.name} さん、お帰りなさい！`, 'success');
+
+          // Redirect based on role if needed
+          setTimeout(() => {
+            const role = targetUser.role || '運営';
+            if (role === '管理者') window.location.href = './admin.html';
+            else if (role === '開票担当者') window.location.href = './tally.html';
+            else if (role === '運営') window.location.href = './reception.html';
+          }, 800);
+          return true;
+        };
+
+        // 新規登録処理（役割選択対応）
+        const handleRegister = ({ name, email, password, role }) => {
+          const isExist = users.some(u => u.email.toLowerCase() === email.toLowerCase());
+          if (isExist) {
+            showToast('このメールアドレスは既に登録されています', 'error');
+            return false;
+          }
+
+          const newUser = {
+            id: `user-${Date.now()}`,
+            name,
+            email,
+            password,
+            role: role || '運営',
+            createdAt: new Date().toISOString().split('T')[0]
+          };
+
+          setUsers(prev => [...prev, newUser]);
+          setCurrentUser(newUser);
+          setView('dashboard');
+          showToast(`アカウント登録が完了しました！（役職: ${newUser.role}）`, 'success');
+
+          setTimeout(() => {
+            if (newUser.role === '管理者') window.location.href = './admin.html';
+            else if (newUser.role === '開票担当者') window.location.href = './tally.html';
+            else window.location.href = './reception.html';
+          }, 800);
+
+          return true;
+        };
+
+        // ログアウト処理
+        const handleLogout = () => {
+          setCurrentUser(null);
+          setView('login');
+          showToast('ログアウトしました', 'info');
+        };
+
+        // アカウント削除処理 (退会)
+        const handleDeleteAccount = () => {
+          if (!currentUser) return;
+          if (confirm(`本当にアカウント 「${currentUser.name} (${currentUser.email})」 を完全に削除しますか？\n\n※削除するとこのアカウントでのログインは行えなくなります。`)) {
+            const targetEmail = currentUser.email.toLowerCase();
+            const targetId = currentUser.id;
+
+            // 1. React AuthPanel ユーザーリストから除外
+            const updatedUsers = users.filter(u => u.email.toLowerCase() !== targetEmail && u.id !== targetId);
+            setUsers(updatedUsers);
+            try {
+              localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(updatedUsers));
+            } catch (e) {}
+
+            // 2. kodomo_senkyo_local_accounts からも除外
+            try {
+              const rawLocal = localStorage.getItem('kodomo_senkyo_local_accounts') || '[]';
+              const localAccs = JSON.parse(rawLocal);
+              const filteredLocal = localAccs.filter(a => {
+                const em = (a.email || '').toLowerCase();
+                const un = (a.username || '').toLowerCase();
+                return em !== targetEmail && un !== targetEmail.split('@')[0];
+              });
+              localStorage.setItem('kodomo_senkyo_local_accounts', JSON.stringify(filteredLocal));
+            } catch (e) {}
+
+            // 3. ログインセッション削除
+            setCurrentUser(null);
+            setView('login');
+            showToast('アカウントを完全に削除（退会）しました', 'info');
+          }
+        };
+
+        return (
+          <div className="relative font-sans text-slate-100">
+            {/* トースト通知 */}
+            {toast && (
+              <div className="fixed top-5 right-5 z-50 animate-bounce transition-all duration-300">
+                <div className={`flex items-center gap-3 px-4 py-3 rounded-xl shadow-2xl backdrop-blur-md border ${
+                  toast.type === 'error' 
+                    ? 'bg-rose-950/80 border-rose-600/50 text-rose-200' 
+                    : toast.type === 'info'
+                    ? 'bg-slate-900/80 border-slate-700 text-slate-200'
+                    : 'bg-emerald-950/80 border-emerald-500/50 text-emerald-200'
+                }`}>
+                  {toast.type === 'error' ? (
+                    <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />
+                  ) : (
+                    <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+                  )}
+                  <span className="text-sm font-medium">{toast.message}</span>
+                </div>
+              </div>
+            )}
+
+            {/* パネルコンテンツ */}
+            <div>
+              {view === 'login' && (
+                <LoginForm 
+                  onLogin={handleLogin} 
+                  onSwitchToRegister={() => setView('register')}
+                  onSwitchToForgot={() => setView('forgot')}
+                />
+              )}
+              {view === 'register' && (
+                <RegisterForm 
+                  onRegister={handleRegister} 
+                  onSwitchToLogin={() => setView('login')}
+                />
+              )}
+              {view === 'forgot' && (
+                <ForgotPasswordForm 
+                  onBack={() => setView('login')}
+                  onSuccess={(msg) => {
+                    showToast(msg, 'info');
+                    setView('login');
+                  }}
+                />
+              )}
+              {view === 'dashboard' && currentUser && (
+                <DashboardView 
+                  user={currentUser} 
+                  onLogout={handleLogout} 
+                  onDeleteAccount={handleDeleteAccount}
+                />
+              )}
+            </div>
+          </div>
+        );
+      }
+
+      // 1. ログインフォーム
+      function LoginForm({ onLogin, onSwitchToRegister, onSwitchToForgot }) {
+        const [email, setEmail] = useState('');
+        const [password, setPassword] = useState('');
+        const [showPassword, setShowPassword] = useState(false);
+        const [loading, setLoading] = useState(false);
+        const [rememberMe, setRememberMe] = useState(true);
+
+        const handleSubmit = (e) => {
+          e.preventDefault();
+          if (!email || !password) return;
+
+          setLoading(true);
+          setTimeout(() => {
+            onLogin({ email, password });
+            setLoading(false);
+          }, 400);
+        };
+
+        const fillDemoAccount = () => {
+          setEmail('demo@example.com');
+          setPassword('Password123!');
+        };
+
+        return (
+          <div className="bg-slate-900/90 border border-slate-800 p-8 rounded-2xl shadow-xl shadow-black/40 backdrop-blur-xl">
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-white tracking-tight">ログイン</h2>
+              <p className="text-sm text-slate-400 mt-1">
+                登録済みの認証情報でアカウントにサインインしてください
+              </p>
+            </div>
+
+            {/* デモ用クイックログインボタン */}
+            <div className="mb-5 p-3 rounded-xl bg-indigo-950/40 border border-indigo-800/40 flex items-center justify-between text-xs">
+              <span className="text-indigo-300">テスト用デモアカウント</span>
+              <button
+                type="button"
+                onClick={fillDemoAccount}
+                className="text-xs text-indigo-400 hover:text-indigo-300 font-medium underline cursor-pointer"
+              >
+                自動入力
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                  メールアドレス
+                </label>
+                <div className="relative">
+                  <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="name@example.com"
+                    className="w-full bg-slate-950/60 border border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-300">
+                    パスワード
+                  </label>
+                  <button
+                    type="button"
+                    onClick={onSwitchToForgot}
+                    className="text-xs text-indigo-400 hover:text-indigo-300 transition"
+                  >
+                    パスワードをお忘れですか？
+                  </button>
+                </div>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full bg-slate-950/60 border border-slate-700 rounded-xl pl-10 pr-10 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between py-1">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="w-4 h-4 rounded border-slate-700 bg-slate-950 text-indigo-600 focus:ring-indigo-500 focus:ring-offset-slate-900"
+                  />
+                  <span className="text-xs text-slate-400">ログイン状態を保持する</span>
+                </label>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full mt-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-medium py-2.5 rounded-xl shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 transition active:scale-[0.99] disabled:opacity-50"
+              >
+                {loading ? (
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <span>ログイン</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+            </form>
+
+            <div className="mt-6 pt-6 border-t border-slate-800 text-center">
+              <p className="text-xs text-slate-400">
+                まだアカウントをお持ちではありませんか？{' '}
+                <button
+                  type="button"
+                  onClick={onSwitchToRegister}
+                  className="text-indigo-400 hover:text-indigo-300 font-semibold transition ml-1"
+                >
+                  新規登録する
+                </button>
+              </p>
+            </div>
+          </div>
+        );
+      }
+
+      // 2. アカウント新規登録フォーム（役割選択ドロップダウン付き）
+      function RegisterForm({ onRegister, onSwitchToLogin }) {
+        const [name, setName] = useState('');
+        const [email, setEmail] = useState('');
+        const [password, setPassword] = useState('');
+        const [confirmPassword, setConfirmPassword] = useState('');
+        const [role, setRole] = useState('運営');
+        const [showPassword, setShowPassword] = useState(false);
+        const [agreeTerms, setAgreeTerms] = useState(false);
+        const [loading, setLoading] = useState(false);
+
+        // パスワードの強度スコア算出 (0〜4)
+        const passwordStrength = useMemo(() => {
+          let score = 0;
+          if (password.length >= 8) score++;
+          if (/[A-Z]/.test(password)) score++;
+          if (/[0-9]/.test(password)) score++;
+          if (/[^A-Za-z0-9]/.test(password)) score++;
+          return score;
+        }, [password]);
+
+        // 入力エラー検証
+        const errors = useMemo(() => {
+          const errs = {};
+          if (name && name.trim().length < 2) {
+            errs.name = '名前は2文字以上で入力してください';
+          }
+          if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            errs.email = '有効なメールアドレス形式を入力してください';
+          }
+          if (password && password.length < 8) {
+            errs.password = 'パスワードは8文字以上必要です';
+          }
+          if (confirmPassword && password !== confirmPassword) {
+            errs.confirmPassword = 'パスワードが一致しません';
+          }
+          return errs;
+        }, [name, email, password, confirmPassword]);
+
+        const handleSubmit = (e) => {
+          e.preventDefault();
+          if (!agreeTerms) return;
+          if (Object.keys(errors).length > 0) return;
+          if (password !== confirmPassword) return;
+
+          setLoading(true);
+          setTimeout(() => {
+            onRegister({ name, email, password, role });
+            setLoading(false);
+          }, 500);
+        };
+
+        const getStrengthBarColor = () => {
+          if (passwordStrength <= 1) return 'bg-rose-500';
+          if (passwordStrength === 2) return 'bg-amber-500';
+          if (passwordStrength === 3) return 'bg-blue-500';
+          return 'bg-emerald-500';
+        };
+
+        const getStrengthLabel = () => {
+          if (!password) return '';
+          if (passwordStrength <= 1) return '脆弱';
+          if (passwordStrength === 2) return '普通';
+          if (passwordStrength === 3) return '良好';
+          return '極めて強力';
+        };
+
+        return (
+          <div className="bg-slate-900/90 border border-slate-800 p-8 rounded-2xl shadow-xl shadow-black/40 backdrop-blur-xl">
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-white tracking-tight">アカウント登録</h2>
+              <p className="text-sm text-slate-400 mt-1">
+                必要情報を入力して、新しいアカウントを作成しましょう
+              </p>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* お名前 */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                  お名前 / ユーザー名
+                </label>
+                <div className="relative">
+                  <User className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    required
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="山田 太郎"
+                    className={`w-full bg-slate-950/60 border rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 transition ${
+                      errors.name ? 'border-rose-500/70 focus:ring-rose-500' : 'border-slate-700 focus:ring-indigo-500 focus:border-transparent'
+                    }`}
+                  />
+                </div>
+                {errors.name && <p className="text-xs text-rose-400 mt-1">{errors.name}</p>}
+              </div>
+
+              {/* メールアドレス */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                  メールアドレス
+                </label>
+                <div className="relative">
+                  <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="name@example.com"
+                    className={`w-full bg-slate-950/60 border rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 transition ${
+                      errors.email ? 'border-rose-500/70 focus:ring-rose-500' : 'border-slate-700 focus:ring-indigo-500 focus:border-transparent'
+                    }`}
+                  />
+                </div>
+                {errors.email && <p className="text-xs text-rose-400 mt-1">{errors.email}</p>}
+              </div>
+
+              {/* 役割 / 役職選択 */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                  希望する役割 (権限)
+                </label>
+                <div className="relative">
+                  <Briefcase className="w-4 h-4 text-indigo-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <select
+                    value={role}
+                    onChange={(e) => setRole(e.target.value)}
+                    className="w-full bg-slate-950/60 border border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                  >
+                    <option value="運営">運営 (受付・投票操作 / ダッシュボード)</option>
+                    <option value="開票担当者">開票担当者 (票数照合・集計入力)</option>
+                    <option value="管理者">管理者 (全機能アクセス + アカウント管理)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* パスワード */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                  パスワード (8文字以上)
+                </label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="大文字・数字・記号の組み合わせ"
+                    className={`w-full bg-slate-950/60 border rounded-xl pl-10 pr-10 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 transition ${
+                      errors.password ? 'border-rose-500/70 focus:ring-rose-500' : 'border-slate-700 focus:ring-indigo-500 focus:border-transparent'
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+
+                {/* 強度インジケーター */}
+                {password && (
+                  <div className="mt-2">
+                    <div className="flex items-center justify-between text-[11px] mb-1">
+                      <span className="text-slate-400">強度:</span>
+                      <span className="font-semibold text-slate-300">{getStrengthLabel()}</span>
+                    </div>
+                    <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden flex gap-1">
+                      <div className={`h-full flex-1 rounded-full transition-all duration-300 ${passwordStrength >= 1 ? getStrengthBarColor() : 'bg-transparent'}`} />
+                      <div className={`h-full flex-1 rounded-full transition-all duration-300 ${passwordStrength >= 2 ? getStrengthBarColor() : 'bg-transparent'}`} />
+                      <div className={`h-full flex-1 rounded-full transition-all duration-300 ${passwordStrength >= 3 ? getStrengthBarColor() : 'bg-transparent'}`} />
+                      <div className={`h-full flex-1 rounded-full transition-all duration-300 ${passwordStrength >= 4 ? getStrengthBarColor() : 'bg-transparent'}`} />
+                    </div>
+                  </div>
+                )}
+                {errors.password && <p className="text-xs text-rose-400 mt-1">{errors.password}</p>}
+              </div>
+
+              {/* パスワード確認 */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                  パスワード（確認用）
+                </label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="もう一度入力"
+                    className={`w-full bg-slate-950/60 border rounded-xl pl-10 pr-10 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 transition ${
+                      errors.confirmPassword ? 'border-rose-500/70 focus:ring-rose-500' : 'border-slate-700 focus:ring-indigo-500 focus:border-transparent'
+                    }`}
+                  />
+                </div>
+                {errors.confirmPassword && <p className="text-xs text-rose-400 mt-1">{errors.confirmPassword}</p>}
+              </div>
+
+              {/* 利用規約同意 */}
+              <div className="pt-2">
+                <label className="flex items-start gap-2.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    required
+                    checked={agreeTerms}
+                    onChange={(e) => setAgreeTerms(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 rounded border-slate-700 bg-slate-950 text-indigo-600 focus:ring-indigo-500 focus:ring-offset-slate-900"
+                  />
+                  <span className="text-xs text-slate-400 leading-snug">
+                    <span className="text-indigo-400 underline cursor-pointer">利用規約</span> および{' '}
+                    <span className="text-indigo-400 underline cursor-pointer">プライバシーポリシー</span>
+                    に同意してアカウントを開設します
+                  </span>
+                </label>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading || !agreeTerms || Object.keys(errors).length > 0}
+                className="w-full mt-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-medium py-2.5 rounded-xl shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 transition active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? (
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4" />
+                    <span>アカウントを作成</span>
+                  </>
+                )}
+              </button>
+            </form>
+
+            <div className="mt-6 pt-6 border-t border-slate-800 text-center">
+              <p className="text-xs text-slate-400">
+                既にアカウントをお持ちですか？{' '}
+                <button
+                  type="button"
+                  onClick={onSwitchToLogin}
+                  className="text-indigo-400 hover:text-indigo-300 font-semibold transition ml-1"
+                >
+                  ログインはこちら
+                </button>
+              </p>
+            </div>
+          </div>
+        );
+      }
+
+      // 3. パスワード再設定フォーム
+      function ForgotPasswordForm({ onBack, onSuccess }) {
+        const [email, setEmail] = useState('');
+        const [loading, setLoading] = useState(false);
+
+        const handleReset = (e) => {
+          e.preventDefault();
+          if (!email) return;
+
+          setLoading(true);
+          setTimeout(() => {
+            setLoading(false);
+            onSuccess(`${email} 宛に再設定リンクを送信しました（模擬）`);
+          }, 600);
+        };
+
+        return (
+          <div className="bg-slate-900/90 border border-slate-800 p-8 rounded-2xl shadow-xl shadow-black/40 backdrop-blur-xl">
+            <button
+              onClick={onBack}
+              className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200 mb-6 transition"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              <span>ログイン画面に戻る</span>
+            </button>
+
+            <div className="mb-6">
+              <div className="w-10 h-10 rounded-xl bg-indigo-950/80 border border-indigo-700/50 flex items-center justify-center text-indigo-400 mb-3">
+                <KeyRound className="w-5 h-5" />
+              </div>
+              <h2 className="text-xl font-bold text-white tracking-tight">パスワードの再設定</h2>
+              <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
+                ご登録のメールアドレスを入力してください。パスワードリセット用の案内をお送りします。
+              </p>
+            </div>
+
+            <form onSubmit={handleReset} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                  メールアドレス
+                </label>
+                <div className="relative">
+                  <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="name@example.com"
+                    className="w-full bg-slate-950/60 border border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2.5 rounded-xl shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 transition active:scale-[0.99] disabled:opacity-50"
+              >
+                {loading ? (
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <span>送信する</span>
+                )}
+              </button>
+            </form>
+          </div>
+        );
+      }
+
+      // 4. ログイン後ダッシュボード
+      function DashboardView({ user, onLogout, onDeleteAccount }) {
+        return (
+          <div className="bg-slate-900/90 border border-slate-800 rounded-2xl shadow-xl shadow-black/40 backdrop-blur-xl overflow-hidden">
+            {/* ユーザーヘッダーバナー */}
+            <div className="bg-gradient-to-r from-indigo-900/60 to-purple-900/60 p-6 border-b border-slate-800 flex items-center gap-4">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white text-2xl font-bold shadow-lg shadow-indigo-500/30">
+                {user.name.charAt(0)}
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-xl font-bold text-white">{user.name}</h2>
+                  <span className="bg-emerald-950 text-emerald-300 border border-emerald-500/40 text-[10px] font-semibold px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <ShieldCheck className="w-3 h-3" />
+                    認証済み ({user.role || '運営'})
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400 mt-1">{user.email}</p>
+              </div>
+            </div>
+
+            {/* ユーザー情報詳細 */}
+            <div className="p-6 space-y-4">
+              <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                アカウント情報
+              </h3>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800">
+                  <span className="text-slate-500 block mb-1">ユーザーID</span>
+                  <span className="font-mono text-slate-200 text-[11px] truncate block">
+                    {user.id}
+                  </span>
+                </div>
+                <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-slate-500" />
+                  <div>
+                    <span className="text-slate-500 block text-[11px]">登録日</span>
+                    <span className="text-slate-200 font-medium">{user.createdAt}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* 権限に応じたコントロールパネル案内 (管理者のみ管理者パネルを表示) */}
+              {user.role === '管理者' && (
+                <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 space-y-2.5 mt-3">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-amber-300 text-xs flex items-center gap-1.5">
+                      <ShieldCheck className="w-4 h-4 text-amber-400" />
+                      管理者専用コントロールパネル
+                    </span>
+                    <span className="text-[10px] px-2 py-0.5 bg-amber-500/20 text-amber-300 rounded font-mono font-bold">ADMIN ONLY</span>
+                  </div>
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    スタッフのアカウント管理、権限変更、選挙ステータス制御などの管理者専用機能へアクセスできます。
+                  </p>
+                  <a
+                    href="./admin.html"
+                    className="inline-flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs shadow-lg shadow-amber-500/20 transition"
+                  >
+                    <ShieldCheck className="w-4 h-4" />
+                    管理者パネルを開く (admin.html)
+                  </a>
+                </div>
+              )}
+
+              {user.role === '開票担当者' && (
+                <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 space-y-2.5 mt-3">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-emerald-300 text-xs flex items-center gap-1.5">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                      開票・集計コントロール
+                    </span>
+                  </div>
+                  <a
+                    href="./tally.html"
+                    className="inline-flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs shadow-lg transition"
+                  >
+                    開票・集計画面を開く (tally.html)
+                  </a>
+                </div>
+              )}
+
+              {(user.role === '運営' || !user.role) && (
+                <div className="p-4 rounded-xl bg-indigo-500/10 border border-indigo-500/30 space-y-2.5 mt-3">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-indigo-300 text-xs flex items-center gap-1.5">
+                      <User className="w-4 h-4 text-indigo-400" />
+                      受付・運営ダッシュボード
+                    </span>
+                  </div>
+                  <a
+                    href="./reception.html"
+                    className="inline-flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs shadow-lg transition"
+                  >
+                    受付画面を開く (reception.html)
+                  </a>
+                </div>
+              )}
+
+              {/* セキュリティ状態ステータス */}
+              <div className="p-4 rounded-xl bg-indigo-950/30 border border-indigo-800/40 mt-4">
+                <div className="flex items-start gap-3">
+                  <ShieldCheck className="w-5 h-5 text-indigo-400 shrink-0 mt-0.5" />
+                  <div className="text-xs">
+                    <span className="font-semibold text-indigo-200 block mb-0.5">
+                      アカウントの保護状態は良好です
+                    </span>
+                    <span className="text-slate-400 leading-relaxed block">
+                      パスワード暗号化やリアルタイム検証が正しく作動しています。
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* アクションボタン (ログアウト & アカウント削除) */}
+              <div className="pt-4 border-t border-slate-800 flex flex-col sm:flex-row gap-3">
+                <button
+                  onClick={onLogout}
+                  className="flex-1 flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium py-2.5 rounded-xl border border-slate-700 text-xs transition"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>ログアウト</span>
+                </button>
+                <button
+                  onClick={onDeleteAccount}
+                  className="flex-1 flex items-center justify-center gap-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 font-medium py-2.5 rounded-xl border border-rose-500/30 text-xs transition"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>アカウント削除 (退会)</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      // Render React AuthPanel in left column
+      const panelRoot = document.getElementById('auth-panel-root');
+      if (panelRoot) {
+        const root = ReactDOM.createRoot(panelRoot);
+        root.render(<AuthCorePanel />);
+      }
+    </script>
+
+    <!-- Original Staff Portal JS -->
     <script type="module" src="./login.js"></script>
 </body>
 </html>

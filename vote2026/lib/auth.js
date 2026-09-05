@@ -427,19 +427,39 @@ export async function updateAccountRole(username, newRole) {
 }
 
 /**
- * アカウントの削除（Supabase DB `staff_accounts` ＋ ローカル削除）
+ * アカウントの削除（Supabase DB `staff_accounts` ＋ ローカルストレージ全削除同期）
  * @param {string} username 
  * @returns {Promise<Object>}
  */
 export async function deleteAccount(username) {
   const currentUser = getCurrentUser();
-  if (currentUser && currentUser.username && currentUser.username.toLowerCase() === username.toLowerCase()) {
-    return { success: false, message: '現在ログイン中の自分自身のアカウントは削除できません。' };
+  const cleanTarget = (username || '').toLowerCase().trim();
+
+  if (currentUser && currentUser.username && currentUser.username.toLowerCase() === cleanTarget) {
+    return { success: false, message: '現在ログイン中の自分自身のアカウントは管理者パネルからは削除できません。ダッシュボードの退会ボタンを使用してください。' };
   }
   
-  const localAccounts = getStoredLocalAccounts().filter(a => !a.username || a.username.toLowerCase() !== username.toLowerCase());
+  // 1. kodomo_senkyo_local_accounts から削除
+  const localAccounts = getStoredLocalAccounts().filter(a => {
+    const un = (a.username || '').toLowerCase();
+    const em = (a.email || '').toLowerCase();
+    return un !== cleanTarget && em !== cleanTarget && un !== cleanTarget.split('@')[0];
+  });
   localStorage.setItem(STORAGE_LOCAL_ACCOUNTS, JSON.stringify(localAccounts));
 
+  // 2. authcore_registered_users (Reactログインパネル用) から削除
+  try {
+    const raw = localStorage.getItem('authcore_registered_users') || '[]';
+    const regUsers = JSON.parse(raw);
+    const updatedUsers = regUsers.filter(u => {
+      const em = (u.email || '').toLowerCase();
+      const id = (u.id || '').toLowerCase();
+      return em !== cleanTarget && id !== cleanTarget && em.split('@')[0] !== cleanTarget;
+    });
+    localStorage.setItem('authcore_registered_users', JSON.stringify(updatedUsers));
+  } catch (e) {}
+
+  // 3. Supabase DBからの削除試行
   try {
     await supabase.from('staff_accounts').delete().eq('username', username);
   } catch (e) {
