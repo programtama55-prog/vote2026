@@ -239,10 +239,26 @@
       const INITIAL_DEMO_USERS = [
         {
           id: 'demo-user-1',
-          name: 'デモユーザー',
+          name: '管理者 スタッフ',
           email: 'demo@example.com',
           password: 'Password123!',
           role: '管理者',
+          createdAt: '2026-01-15'
+        },
+        {
+          id: 'demo-user-2',
+          name: '受付・運営 スタッフ',
+          email: 'unei@example.com',
+          password: 'Password123!',
+          role: '運営',
+          createdAt: '2026-01-15'
+        },
+        {
+          id: 'demo-user-3',
+          name: '開票立会人 スタッフ',
+          email: 'kaihyo@example.com',
+          password: 'Password123!',
+          role: '開票担当者',
           createdAt: '2026-01-15'
         }
       ];
@@ -503,8 +519,8 @@
           }, 400);
         };
 
-        const fillDemoAccount = () => {
-          setEmail('demo@example.com');
+        const fillDemoAccount = (demoEmail) => {
+          setEmail(demoEmail);
           setPassword('Password123!');
         };
 
@@ -518,15 +534,34 @@
             </div>
 
             {/* デモ用クイックログインボタン */}
-            <div className="mb-5 p-3 rounded-xl bg-indigo-950/40 border border-indigo-800/40 flex items-center justify-between text-xs">
-              <span className="text-indigo-300">テスト用デモアカウント</span>
-              <button
-                type="button"
-                onClick={fillDemoAccount}
-                className="text-xs text-indigo-400 hover:text-indigo-300 font-medium underline cursor-pointer"
-              >
-                自動入力
-              </button>
+            <div className="mb-5 p-3.5 rounded-xl bg-indigo-950/60 border border-indigo-800/60 space-y-2">
+              <div className="text-xs font-bold text-indigo-300 flex items-center justify-between">
+                <span>⚡ 役職別ワンタップ・自動入力</span>
+                <span className="text-[10px] text-indigo-400 font-mono">パスワード: Password123!</span>
+              </div>
+              <div className="grid grid-cols-3 gap-1.5 text-xs font-bold">
+                <button
+                  type="button"
+                  onClick={() => fillDemoAccount('unei@example.com')}
+                  className="py-1.5 px-2 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-500/40 text-[11px] transition text-center"
+                >
+                  💳 運営 (受付)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => fillDemoAccount('kaihyo@example.com')}
+                  className="py-1.5 px-2 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-[11px] transition text-center"
+                >
+                  📊 開票担当
+                </button>
+                <button
+                  type="button"
+                  onClick={() => fillDemoAccount('demo@example.com')}
+                  className="py-1.5 px-2 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-[11px] transition text-center"
+                >
+                  🛡️ 管理者
+                </button>
+              </div>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">

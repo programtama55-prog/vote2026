@@ -80,10 +80,13 @@
             </div>
 
             <div class="flex items-center gap-3">
-                <!-- Mode Badge -->
-                <span id="mode-badge" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                    ロード中...
-                </span>
+                <!-- Account Logo / Staff Portal Link -->
+                <a href="./login.html" id="mode-badge" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md transition-all flex items-center gap-2 border border-indigo-500/50 group" title="スタッフポータルを開く">
+                    <div class="w-6 h-6 rounded-lg bg-white/20 flex items-center justify-center text-white text-xs group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-user-gear"></i>
+                    </div>
+                    <span>スタッフポータル</span>
+                </a>
                 <div id="header-user-widget"></div>
             </div>
         </div>
@@ -162,7 +165,7 @@
                     <i class="fa-solid fa-ticket"></i>
                 </div>
                 <div class="flex-1">
-                    <p class="text-xs text-slate-400 font-bold">投票用紙 交付済数</p>
+                    <p class="text-xs text-slate-400 font-bold">受付完了数</p>
                     <div class="flex items-baseline gap-1">
                         <span id="stat-issued" class="text-3xl font-black text-white font-mono">0人</span>
                         <span id="stat-issued-percent" class="text-xs font-bold text-slate-400">(0%)</span>

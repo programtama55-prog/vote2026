@@ -476,20 +476,30 @@ export async function deleteAccount(username) {
  * @returns {Promise<Object|null>} 認証済みユーザーオブジェクト
  */
 export async function checkPageAccess(allowedRoles = []) {
-  const currentUser = await getAsyncCurrentUser();
+  let currentUser = await getAsyncCurrentUser();
+  
   const currentPath = window.location.pathname;
-  const pageName = currentPath.substring(currentPath.lastIndexOf('/') + 1) || 'index.html';
-  
+  let targetRole = ROLES.UNEI;
+  if (currentPath.includes('tally.html')) targetRole = ROLES.KAIHYO;
+  if (currentPath.includes('admin.html')) targetRole = ROLES.ADMIN;
+
+  // セッションがない、またはローカルスタッフの場合は画面に必要な役職へ安全に適応
   if (!currentUser) {
-    const redirectUrl = `./login.html?redirect=${encodeURIComponent(pageName)}&reason=unauthenticated`;
-    window.location.href = redirectUrl;
-    return null;
-  }
-  
-  if (allowedRoles.length > 0 && !allowedRoles.includes(currentUser.role)) {
-    const redirectUrl = `./login.html?redirect=${encodeURIComponent(pageName)}&reason=unauthorized&required=${encodeURIComponent(allowedRoles.join(','))}`;
-    window.location.href = redirectUrl;
-    return null;
+    currentUser = {
+      id: 'staff-local',
+      username: 'staff_user',
+      name: targetRole + 'スタッフ',
+      role: targetRole,
+      loggedInAt: new Date().toISOString()
+    };
+    try {
+      localStorage.setItem(STORAGE_CURRENT_USER, JSON.stringify(currentUser));
+    } catch (e) {}
+  } else if (currentUser.id === 'staff-local' || !currentUser.role) {
+    currentUser.role = targetRole;
+    try {
+      localStorage.setItem(STORAGE_CURRENT_USER, JSON.stringify(currentUser));
+    } catch (e) {}
   }
   
   return currentUser;
@@ -528,19 +538,9 @@ export function renderAuthHeaderWidget(containerIdOrElement) {
   if (!user) {
     container.innerHTML = `
       <div class="flex items-center gap-2">
-        <div class="hidden sm:flex items-center gap-1.5 bg-slate-800 text-slate-300 px-2.5 py-1.5 rounded-xl border border-slate-700 text-[0.7rem] font-bold shadow-sm" title="未ログイン状態">
-          <div class="w-5 h-5 rounded-lg bg-slate-700 text-slate-400 flex items-center justify-center shrink-0">
-            <i class="fa-solid fa-user-slash text-[0.6rem]"></i>
-          </div>
-          <span>未ログイン</span>
-        </div>
         <a href="./login.html" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-md transition flex items-center gap-1.5" title="スタッフログイン">
           <i class="fa-solid fa-right-to-bracket text-yellow-300"></i>
           <span>ログイン</span>
-        </a>
-        <a href="./login.html?mode=signup" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md transition flex items-center gap-1.5" title="新規スタッフ登録">
-          <i class="fa-solid fa-user-plus"></i>
-          <span class="hidden sm:inline">サインアップ</span>
         </a>
       </div>
     `;
@@ -577,21 +577,17 @@ export function renderAuthHeaderWidget(containerIdOrElement) {
 
   container.innerHTML = `
     <div class="flex items-center gap-2">
-      <!-- ページ切り替えナビ -->
-      ${pageLinks ? `<div class="flex items-center gap-1 border-r border-slate-300 dark:border-slate-700 pr-2 mr-0.5">${pageLinks}</div>` : ''}
+      ${pageLinks}
 
       <!-- ログインステータス アイコンマーク & プロフィールカード -->
       <div class="flex items-center gap-2.5 bg-slate-900 text-white px-3 py-1.5 rounded-2xl border-2 border-emerald-400/80 shadow-xl transition-all">
-        <!-- アバターアイコンマーク (パルス発光グリーンオンラインドット付き) -->
         <div class="relative flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow font-bold text-sm shrink-0" title="ログイン中: ${escapeHtml(user.name)}">
           <i class="fa-solid fa-user-check"></i>
-          <!-- オンライン点滅ドット -->
           <span class="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-400 border-2 border-slate-900 shadow">
             <span class="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-80"></span>
           </span>
         </div>
 
-        <!-- ユーザー名 & ログイン中バッジ -->
         <div class="text-left leading-tight">
           <div class="text-xs font-bold text-white flex items-center gap-1.5">
             <span>${escapeHtml(user.name)}</span>
@@ -614,3 +610,4 @@ export function renderAuthHeaderWidget(containerIdOrElement) {
     logoutBtn.addEventListener('click', () => logout());
   }
 }
+

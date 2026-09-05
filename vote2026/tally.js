@@ -66,22 +66,29 @@ function setLocalData(key, value) {
 }
 
 // --- 初期化処理 ---
-document.addEventListener('DOMContentLoaded', async () => {
+async function init() {
   const user = await checkPageAccess([ROLES.KAIHYO, ROLES.ADMIN]);
   if (!user) return;
+
   renderAuthHeaderWidget('header-user-widget');
 
   updateConnectionStatusUI();
   initEventListeners();
   await loadElections();
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
 
 // Supabase接続状況のUI表示
 function updateConnectionStatusUI() {
   const modeBadge = document.getElementById('mode-badge');
   if (modeBadge) {
-    modeBadge.className = 'px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1';
-    modeBadge.innerHTML = '<i class="fa-solid fa-database"></i> Supabase データベース接続中';
+    modeBadge.href = './login.html';
+    modeBadge.title = 'スタッフポータルを開く';
   }
 }
 

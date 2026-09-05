@@ -24,23 +24,30 @@ const MOCK_REGISTRATIONS = [
 ];
 
 // --- 初期化処理 ---
-document.addEventListener('DOMContentLoaded', async () => {
+async function init() {
   const user = await checkPageAccess([ROLES.UNEI, ROLES.ADMIN]);
   if (!user) return;
+
   renderAuthHeaderWidget('header-user-widget');
 
   updateConnectionStatusUI();
   initEventListeners();
   await refreshDashboard();
   startAutoUpdate();
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
 
 // Supabase接続状況のUI表示
 function updateConnectionStatusUI() {
   const modeBadge = document.getElementById('mode-badge');
   if (modeBadge) {
-    modeBadge.className = 'px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
-    modeBadge.innerHTML = '<i class="fa-solid fa-database mr-1"></i>Supabase データベース接続中';
+    modeBadge.href = './login.html';
+    modeBadge.title = 'スタッフポータルを開く';
   }
 }
 
@@ -104,10 +111,16 @@ async function fetchRegistrations() {
       .select('id, reg_number, is_advance, age_group, municipality, status, created_at');
 
     if (error) throw error;
-    state.registrations = data || [];
+
+    if (data && data.length > 0) {
+      state.registrations = data;
+    } else {
+      const raw = localStorage.getItem('kodomo_senkyo_voters');
+      state.registrations = raw ? JSON.parse(raw) : [];
+    }
   } catch (err) {
-    console.error('ダッシュボードのデータ取得失敗:', err);
-    showToast('データの更新に失敗しました。', 'error');
+    const raw = localStorage.getItem('kodomo_senkyo_voters');
+    state.registrations = raw ? JSON.parse(raw) : [];
   }
 }
 
@@ -200,7 +213,7 @@ function downloadCSV() {
   // データ行追加
   state.registrations.forEach(r => {
     const isAdvanceText = r.is_advance ? '事前申込' : '当日登録';
-    const statusText = r.status === 'ballot_issued' ? '交付済み' : '未交付';
+    const statusText = r.status === 'ballot_issued' ? '受付済み' : '未受付';
     
     // 日付フォーマット
     const timeStr = r.created_at ? new Date(r.created_at).toLocaleString('ja-JP') : '-';

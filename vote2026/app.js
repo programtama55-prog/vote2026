@@ -156,12 +156,18 @@ const MOCK_GOVERNOR_POSTS = [
 ];
 
 // --- 初期化処理 (Initialization) ---
-document.addEventListener('DOMContentLoaded', async () => {
+async function initApp() {
   renderAuthHeaderWidget('index-auth-widget');
   initEventListeners();
   initGlobals();
   await loadElections();
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initApp);
+} else {
+  initApp();
+}
 
 // グローバル関数（HTML inline onclick用）
 function initGlobals() {

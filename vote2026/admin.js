@@ -9,12 +9,12 @@ import {
   getRoleBadgeHtml, 
   ROLES 
 } from '@/lib/auth.js';
-import { isSupabaseConfigured } from '@/lib/supabase.js';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase.js';
 import { showToast, escapeHtml } from '@/lib/utils.js';
 
 let currentUser = null;
 
-document.addEventListener('DOMContentLoaded', async () => {
+async function init() {
   // 1. 管理者アクセス権限チェック (管理者以外は自動リダイレクト)
   currentUser = await checkPageAccess([ROLES.ADMIN]);
   if (!currentUser) return; // 権限がない場合はリダイレクト処理が行われる
@@ -26,7 +26,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   initAdminView();
   initEventListeners();
   await loadDashboardData();
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
 
 // 管理者パネルの初期表示設定
 function initAdminView() {
@@ -35,12 +41,13 @@ function initAdminView() {
     userNameEl.textContent = currentUser.name;
   }
 
-  const dbModeEl = document.getElementById('stat-db-mode');
-  if (dbModeEl) {
-    dbModeEl.textContent = isSupabaseConfigured() ? 'Supabase本番' : 'ローカル保存';
-  }
-
   window.switchAdminTab = switchAdminTab;
+
+  window.addEventListener('storage', updateStats);
+  window.addEventListener('focus', updateStats);
+
+  // 定期自動更新 (2秒ごとに最新受付人数を集計・同期)
+  setInterval(updateStats, 2000);
 }
 
 // タブ切り替え制御
@@ -233,13 +240,27 @@ async function updateStats() {
     statusEl.textContent = localStorage.getItem('kodomo_senkyo_status') || '投票受付中';
   }
 
-  // 受付人数の取得 (localStorageの統計)
-  let totalVisitors = 0;
+  // 受付人数の取得 (localStorage / Supabase の統計)
+  let localCount = 0;
   try {
     const raw = localStorage.getItem('kodomo_senkyo_voters') || '[]';
     const voters = JSON.parse(raw);
-    totalVisitors = voters.length;
+    if (Array.isArray(voters)) {
+      localCount = voters.length;
+    }
   } catch (e) {}
+
+  let remoteCount = 0;
+  if (isSupabaseConfigured() && supabase) {
+    try {
+      const { count, error } = await supabase.from('registrations').select('*', { count: 'exact', head: true });
+      if (!error && count !== null) {
+        remoteCount = count;
+      }
+    } catch (e) {}
+  }
+
+  const totalVisitors = Math.max(localCount, remoteCount);
 
   const visitorEl = document.getElementById('stat-total-visitors');
   if (visitorEl) visitorEl.textContent = `${totalVisitors}名`;

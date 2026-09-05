@@ -76,9 +76,12 @@
             </div>
 
             <div class="flex items-center gap-3">
-                <a href="./index.html" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition flex items-center gap-2">
-                    <i class="fa-solid fa-house"></i>
-                    <span class="hidden sm:inline">一般ポータル</span>
+                <!-- Account Logo / Staff Portal Link -->
+                <a href="./login.html" id="mode-badge" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 shadow-md transition-all flex items-center gap-2 group" title="スタッフポータルを開く">
+                    <div class="w-6 h-6 rounded-lg bg-amber-500/30 flex items-center justify-center text-amber-300 text-xs group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-user-shield"></i>
+                    </div>
+                    <span>スタッフポータル</span>
                 </a>
                 <div id="header-user-widget"></div>
             </div>
@@ -114,7 +117,7 @@
         </div>
 
         <!-- System Stats Cards -->
-        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <section class="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-3 gap-4">
             <!-- Card 1: Staff Count -->
             <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700/80 shadow-md flex items-center justify-between">
                 <div>
@@ -145,17 +148,6 @@
                 </div>
                 <div class="w-12 h-12 rounded-2xl bg-sky-500/10 text-sky-400 border border-sky-500/20 flex items-center justify-center text-xl">
                     <i class="fa-solid fa-id-card"></i>
-                </div>
-            </div>
-
-            <!-- Card 4: Database Mode -->
-            <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700/80 shadow-md flex items-center justify-between">
-                <div>
-                    <p class="text-xs text-slate-400 font-bold">DB接続モード</p>
-                    <p id="stat-db-mode" class="text-base font-black text-emerald-400 mt-1">Supabase本番</p>
-                </div>
-                <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center text-xl">
-                    <i class="fa-solid fa-database"></i>
                 </div>
             </div>
         </section>
@@ -359,5 +351,34 @@
 
     <!-- Script -->
     <script type="module" src="./admin.js"></script>
+    <script>
+        (function() {
+            function updateAdminStats() {
+                let localCount = 0;
+                try {
+                    const raw = localStorage.getItem('kodomo_senkyo_voters') || '[]';
+                    const voters = JSON.parse(raw);
+                    if (Array.isArray(voters)) {
+                        localCount = voters.length;
+                    }
+                } catch (e) {}
+
+                const visitorEl = document.getElementById('stat-total-visitors');
+                if (visitorEl) {
+                    visitorEl.textContent = localCount + '名';
+                }
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', updateAdminStats);
+            } else {
+                updateAdminStats();
+            }
+
+            window.addEventListener('storage', updateAdminStats);
+            window.addEventListener('focus', updateAdminStats);
+            setInterval(updateAdminStats, 1000);
+        })();
+    </script>
 </body>
 </html>
