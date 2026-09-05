@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="ja" class="h-full bg-slate-900 text-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>こども選挙 - 管理者コントロールパネル (管理者専用)</title>
+    <meta name="description" content="こども選挙のシステム管理者専用コントロールパネル。スタッフアカウント・役職管理、選挙ステータス制御、監査ログ、データ統合管理が可能です。">
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dash: {
+                            bg: '#0f172a',
+                            card: '#1e293b',
+                            accent: '#f59e0b', // Amber 500
+                            danger: '#ef4444'  // Red 500
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'Noto Sans JP', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Google Fonts & Font Awesome Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background-color: #0f172a;
+        }
+    </style>
+
+    <!-- Supabase Environment Config -->
+    <script src="./env.js"></script>
+
+    <!-- Import Map definition -->
+    <script type="importmap">
+        {
+            "imports": {
+                "@/lib/supabase.js": "./lib/supabase.js",
+                "@/lib/utils.js": "./lib/utils.js",
+                "@/lib/auth.js": "./lib/auth.js"
+            }
+        }
+    </script>
+</head>
+<body class="min-h-full flex flex-col text-slate-200 antialiased bg-slate-900">
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none flex flex-col items-center gap-2 max-w-sm w-full px-4"></div>
+
+    <!-- Header Navigation -->
+    <header class="sticky top-0 z-30 bg-slate-800/90 border-b border-amber-500/30 backdrop-blur-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-slate-950 text-xl font-bold shadow-lg shadow-amber-500/20">
+                    <i class="fa-solid fa-user-shield"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-wider text-white flex items-center gap-2">
+                        こども選挙 <span class="text-xs px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 font-semibold border border-amber-500/40">管理者パネル</span>
+                    </h1>
+                    <p class="text-xs text-amber-200/70 font-medium">システム統括・権限制御・運用管理</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <a href="./index.html" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition flex items-center gap-2">
+                    <i class="fa-solid fa-house"></i>
+                    <span class="hidden sm:inline">一般ポータル</span>
+                </a>
+                <div id="header-user-widget"></div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+        <!-- Admin Welcome Banner -->
+        <div class="bg-gradient-to-r from-amber-950/60 via-slate-800 to-slate-900 border border-amber-500/30 rounded-3xl p-6 sm:p-8 shadow-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+            <div class="space-y-2">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-bold border border-amber-500/40">
+                    <i class="fa-solid fa-shield-halved"></i> 権限確認済み (管理者アクセス)
+                </div>
+                <h2 class="text-2xl font-black text-white">システム全般のコントロールセンター</h2>
+                <p class="text-xs text-slate-300 max-w-2xl leading-relaxed">
+                    本画面は「管理者」権限を持つユーザーのみがアクセス可能です。スタッフアカウントの役職変更・削除、選挙イベントのステータス管理、監査ログの監視が行えます。
+                </p>
+            </div>
+            <div class="flex flex-wrap gap-3 shrink-0">
+                <div class="px-4 py-3 bg-slate-800/90 rounded-2xl border border-slate-700 text-center">
+                    <span class="text-[0.65rem] text-slate-400 font-bold block uppercase">現在のログイン</span>
+                    <span id="admin-user-name" class="text-sm font-bold text-amber-400">確認中...</span>
+                </div>
+                <div class="px-4 py-3 bg-slate-800/90 rounded-2xl border border-slate-700 text-center">
+                    <span class="text-[0.65rem] text-slate-400 font-bold block uppercase">システム状態</span>
+                    <span class="text-sm font-bold text-emerald-400 flex items-center justify-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> 正常稼働中
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Stats Cards -->
+        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- Card 1: Staff Count -->
+            <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700/80 shadow-md flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-slate-400 font-bold">登録スタッフ数</p>
+                    <p id="stat-staff-count" class="text-3xl font-black text-white font-mono mt-1">0名</p>
+                </div>
+                <div class="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center justify-center text-xl">
+                    <i class="fa-solid fa-users-gear"></i>
+                </div>
+            </div>
+
+            <!-- Card 2: Election Status -->
+            <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700/80 shadow-md flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-slate-400 font-bold">選挙進行ステータス</p>
+                    <p id="stat-election-status" class="text-lg font-black text-amber-400 mt-1">確認中...</p>
+                </div>
+                <div class="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 flex items-center justify-center text-xl">
+                    <i class="fa-solid fa-vote-yea"></i>
+                </div>
+            </div>
+
+            <!-- Card 3: Total Visitors -->
+            <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700/80 shadow-md flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-slate-400 font-bold">累計受付人数</p>
+                    <p id="stat-total-visitors" class="text-3xl font-black text-white font-mono mt-1">0名</p>
+                </div>
+                <div class="w-12 h-12 rounded-2xl bg-sky-500/10 text-sky-400 border border-sky-500/20 flex items-center justify-center text-xl">
+                    <i class="fa-solid fa-id-card"></i>
+                </div>
+            </div>
+
+            <!-- Card 4: Database Mode -->
+            <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700/80 shadow-md flex items-center justify-between">
+                <div>
+                    <p class="text-xs text-slate-400 font-bold">DB接続モード</p>
+                    <p id="stat-db-mode" class="text-base font-black text-emerald-400 mt-1">Supabase本番</p>
+                </div>
+                <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center text-xl">
+                    <i class="fa-solid fa-database"></i>
+                </div>
+            </div>
+        </section>
+
+        <!-- Admin Tab Navigation -->
+        <div class="flex items-center gap-2 p-1.5 bg-slate-800/90 rounded-2xl border border-slate-700/80 overflow-x-auto">
+            <button id="admin-tab-btn-accounts" onclick="switchAdminTab('accounts')" class="px-5 py-2.5 rounded-xl text-xs font-bold transition-all bg-amber-500 text-slate-950 shadow-md flex items-center gap-2 shrink-0">
+                <i class="fa-solid fa-users-gear"></i>
+                <span>スタッフ・役職権限管理</span>
+            </button>
+            <button id="admin-tab-btn-election" onclick="switchAdminTab('election')" class="px-5 py-2.5 rounded-xl text-xs font-bold transition-all text-slate-400 hover:text-slate-200 flex items-center gap-2 shrink-0">
+                <i class="fa-solid fa-sliders"></i>
+                <span>選挙・ステータス設定</span>
+            </button>
+            <button id="admin-tab-btn-logs" onclick="switchAdminTab('logs')" class="px-5 py-2.5 rounded-xl text-xs font-bold transition-all text-slate-400 hover:text-slate-200 flex items-center gap-2 shrink-0">
+                <i class="fa-solid fa-clipboard-list"></i>
+                <span>監査・システムログ</span>
+            </button>
+            <button id="admin-tab-btn-backup" onclick="switchAdminTab('backup')" class="px-5 py-2.5 rounded-xl text-xs font-bold transition-all text-slate-400 hover:text-slate-200 flex items-center gap-2 shrink-0">
+                <i class="fa-solid fa-box-archive"></i>
+                <span>データバックアップ & 保守</span>
+            </button>
+        </div>
+
+        <!-- TAB 1: スタッフ・役職権限管理 -->
+        <section id="admin-panel-accounts" class="space-y-6">
+            <div class="bg-slate-800 border border-slate-700 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-700 pb-5">
+                    <div>
+                        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-user-shield text-amber-400"></i> スタッフアカウント一覧 & 役職変更
+                        </h3>
+                        <p class="text-xs text-slate-400 mt-1">登録されているスタッフアカウントの役職（運営・開票担当者・管理者）を昇格・変更・削除できます。</p>
+                    </div>
+                    <button id="btn-refresh-accounts" class="px-3.5 py-2 bg-slate-700 hover:bg-slate-600 rounded-xl text-xs font-bold text-slate-200 transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-rotate"></i> 更新
+                    </button>
+                </div>
+
+                <!-- 新規スタッフ追加フォーム -->
+                <div class="bg-slate-900/80 border border-slate-700/80 rounded-2xl p-5 space-y-4">
+                    <h4 class="text-sm font-bold text-slate-200 flex items-center gap-2">
+                        <i class="fa-solid fa-user-plus text-amber-400"></i> 新規スタッフの直接登録 (役職即時付与)
+                    </h4>
+                    <form id="admin-add-staff-form" class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
+                        <div class="sm:col-span-3">
+                            <label for="new-username" class="block text-xs font-bold text-slate-400 mb-1">ユーザーID</label>
+                            <input type="text" id="new-username" required placeholder="例: tanaka_staff"
+                                   class="w-full px-3.5 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500">
+                        </div>
+                        <div class="sm:col-span-3">
+                            <label for="new-name" class="block text-xs font-bold text-slate-400 mb-1">氏名 (表示名)</label>
+                            <input type="text" id="new-name" required placeholder="例: 田中 太郎"
+                                   class="w-full px-3.5 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500">
+                        </div>
+                        <div class="sm:col-span-3">
+                            <label for="new-role" class="block text-xs font-bold text-slate-400 mb-1">付与する役職</label>
+                            <select id="new-role" required
+                                    class="w-full px-3.5 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-xs font-bold text-slate-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500">
+                                <option value="運営">運営 (受付 / ダッシュボード)</option>
+                                <option value="開票担当者">開票担当者 (集計作業)</option>
+                                <option value="管理者">管理者 (全機能+役職管理)</option>
+                            </select>
+                        </div>
+                        <div class="sm:col-span-3">
+                            <label for="new-password" class="block text-xs font-bold text-slate-400 mb-1">パスワード</label>
+                            <input type="password" id="new-password" required minlength="4" placeholder="••••••••"
+                                   class="w-full px-3.5 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500">
+                        </div>
+                        <div class="sm:col-span-12 flex justify-end pt-2">
+                            <button type="submit" class="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold rounded-xl shadow-lg shadow-amber-500/20 transition flex items-center gap-2">
+                                <i class="fa-solid fa-user-plus"></i> スタッフアカウントを追加する
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- アカウントテーブル -->
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs border-collapse">
+                        <thead>
+                            <tr class="border-b border-slate-700 text-slate-400 font-bold uppercase">
+                                <th class="py-3 px-4">ユーザーID</th>
+                                <th class="py-3 px-4">氏名 (表示名)</th>
+                                <th class="py-3 px-4">現在の役職</th>
+                                <th class="py-3 px-4">役職の変更</th>
+                                <th class="py-3 px-4 text-right">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-accounts-table-body" class="divide-y divide-slate-700/60">
+                            <!-- JSで自動生成 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: 選挙・ステータス設定 -->
+        <section id="admin-panel-election" class="hidden space-y-6">
+            <div class="bg-slate-800 border border-slate-700 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
+                <div class="border-b border-slate-700 pb-4">
+                    <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-sliders text-amber-400"></i> 選挙タイトル & 進行ステータス制御
+                    </h3>
+                    <p class="text-xs text-slate-400 mt-1">一般ポータルやスタッフ画面に反映される選挙タイトルおよび運用フェーズを設定します。</p>
+                </div>
+
+                <form id="admin-election-settings-form" class="space-y-6 max-w-2xl">
+                    <div>
+                        <label for="cfg-election-title" class="block text-xs font-bold text-slate-300 mb-1.5">選挙タイトル</label>
+                        <input type="text" id="cfg-election-title" required value="2026年 こども市長選挙 & 未来まちづくり投票" 
+                               class="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-sm font-bold text-slate-100 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500">
+                    </div>
+
+                    <div>
+                        <label for="cfg-election-status" class="block text-xs font-bold text-slate-300 mb-1.5">進行フェーズ (ステータス)</label>
+                        <select id="cfg-election-status" class="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-sm font-bold text-slate-100 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500">
+                            <option value="準備中">🚧 準備中 (一般受付前・テスト期間)</option>
+                            <option value="投票受付中" selected>🗳️ 投票受付中 (一般ポータル・受付稼働中)</option>
+                            <option value="開票中">📊 開票中 (集計作業・結果判定中)</option>
+                            <option value="確定">🎉 結果確定 (開票結果公開中)</option>
+                        </select>
+                    </div>
+
+                    <div class="pt-2">
+                        <button type="submit" class="px-6 py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold rounded-xl shadow-lg shadow-amber-500/20 transition flex items-center gap-2">
+                            <i class="fa-solid fa-floppy-disk"></i> 設定を保存して反映
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <!-- TAB 3: 監査・システムログ -->
+        <section id="admin-panel-logs" class="hidden space-y-6">
+            <div class="bg-slate-800 border border-slate-700 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
+                <div class="flex justify-between items-center border-b border-slate-700 pb-4">
+                    <div>
+                        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-clipboard-list text-amber-400"></i> システム操作 & ログイン監査ログ
+                        </h3>
+                        <p class="text-xs text-slate-400 mt-1">スタッフのアカウントログイン・権限変更・システム操作のログです。</p>
+                    </div>
+                    <button id="btn-clear-logs" class="px-3 py-1.5 bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 border border-rose-500/30 rounded-xl text-xs font-bold transition">
+                        ログ消去
+                    </button>
+                </div>
+
+                <div class="bg-slate-900 rounded-2xl border border-slate-700 p-4 font-mono text-xs max-h-80 overflow-y-auto space-y-2" id="admin-logs-container">
+                    <!-- Logs dynamically rendered -->
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 4: バックアップ & 保守 -->
+        <section id="admin-panel-backup" class="hidden space-y-6">
+            <div class="bg-slate-800 border border-slate-700 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
+                <div class="border-b border-slate-700 pb-4">
+                    <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-box-archive text-amber-400"></i> システム保守・データバックアップ
+                    </h3>
+                    <p class="text-xs text-slate-400 mt-1">緊急時や選挙終了後のデータバックアップ・復元操作を行います。</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-slate-900/80 border border-slate-700 p-5 rounded-2xl space-y-3">
+                        <h4 class="text-sm font-bold text-slate-200 flex items-center gap-2">
+                            <i class="fa-solid fa-download text-emerald-400"></i> スタッフ・受付全データCSV出力
+                        </h4>
+                        <p class="text-xs text-slate-400 leading-relaxed">
+                            登録スタッフ一覧、受講・交付ログなどのローカルバックアップCSVを作成します。
+                        </p>
+                        <button id="btn-export-admin-csv" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-2">
+                            <i class="fa-solid fa-file-csv"></i> 全データCSVを出力する
+                        </button>
+                    </div>
+
+                    <div class="bg-slate-900/80 border border-slate-700 p-5 rounded-2xl space-y-3">
+                        <h4 class="text-sm font-bold text-slate-200 flex items-center gap-2">
+                            <i class="fa-solid fa-trash-arrow-up text-rose-400"></i> セッション・ローカルキャッシュのリセット
+                        </h4>
+                        <p class="text-xs text-slate-400 leading-relaxed">
+                            端末に保存されているスタッフログインキャッシュや各種テスト一時データを初期化します。
+                        </p>
+                        <button id="btn-reset-cache" class="px-4 py-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-2">
+                            <i class="fa-solid fa-broom"></i> キャッシュを初期化する
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 border-t border-slate-800 py-6 mt-12 text-center text-xs text-slate-500">
+        <div class="max-w-7xl mx-auto px-4">
+            <p>こども選挙 システム運営事務局 &copy; 2026 - 管理者コントロールパネル (全機能統括)</p>
+        </div>
+    </footer>
+
+    <!-- Script -->
+    <script type="module" src="./admin.js"></script>
+</body>
+</html>

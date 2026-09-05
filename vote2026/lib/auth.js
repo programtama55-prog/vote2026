@@ -536,8 +536,8 @@ export function renderAuthHeaderWidget(containerIdOrElement) {
   
   if (user.role === ROLES.ADMIN) {
     pageLinks += `
-      <a href="./login.html#manage-accounts" class="px-2.5 py-1.5 rounded-lg text-xs font-bold hover:bg-slate-700/50 transition flex items-center gap-1.5 text-slate-300 hover:text-white" title="アカウント・役職管理">
-        <i class="fa-solid fa-users-gear text-amber-400"></i><span class="hidden sm:inline">アカウント管理</span>
+      <a href="./admin.html" class="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 transition flex items-center gap-1.5" title="管理者パネル (管理者専用)">
+        <i class="fa-solid fa-user-shield text-amber-400"></i><span class="hidden sm:inline">管理者パネル</span>
       </a>
     `;
   }

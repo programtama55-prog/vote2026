@@ -218,7 +218,7 @@ function redirectAfterLogin(role) {
         window.location.href = './tally.html';
         break;
       case ROLES.ADMIN:
-        window.location.href = './dashboard.html';
+        window.location.href = './admin.html';
         break;
       default:
         window.location.href = './index.html';
