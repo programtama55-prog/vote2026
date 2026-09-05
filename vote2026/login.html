@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="ja" class="h-full bg-slate-900 text-slate-100">
+<html lang="ja" class="h-full bg-slate-950 text-slate-100">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>こども選挙 - スタッフログイン & 役職管理</title>
-    <meta name="description" content="こども選挙の運営・開票担当者・管理者用ログインポータル">
+    <title>AuthCore - 安全なセッション管理システム</title>
+    <meta name="description" content="AuthCore 認証・アカウント管理プラットフォーム">
     
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -12,13 +12,6 @@
         tailwind.config = {
             theme: {
                 extend: {
-                    colors: {
-                        dash: {
-                            bg: '#0f172a',
-                            card: '#1e293b',
-                            accent: '#6366f1'
-                        }
-                    },
                     fontFamily: {
                         sans: ['Inter', 'Noto Sans JP', 'sans-serif'],
                     }
@@ -27,23 +20,15 @@
         }
     </script>
     
-    <!-- Google Fonts & Font Awesome Icons -->
+    <!-- Google Fonts & Lucide Icons -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
-    <style>
-        body {
-            font-family: 'Noto Sans JP', sans-serif;
-            background-color: #0f172a;
-        }
-    </style>
-
-    <!-- Supabase Environment Config -->
+    <!-- Supabase Environment Config & Import Map -->
     <script src="./env.js"></script>
-
-    <!-- Import Map definition -->
     <script type="importmap">
         {
             "imports": {
@@ -54,338 +39,38 @@
         }
     </script>
 </head>
-<body class="min-h-full flex flex-col text-slate-200 antialiased bg-slate-900">
+<body class="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between selection:bg-indigo-500 selection:text-white relative overflow-hidden font-sans antialiased">
+    <!-- 背景のグローエフェクト -->
+    <div class="absolute -top-40 -left-40 w-96 h-96 bg-indigo-600/20 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute -bottom-40 -right-40 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl pointer-events-none"></div>
 
-    <!-- Toast Notification Container -->
-    <div id="toast-container" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none flex flex-col items-center gap-2 max-w-sm w-full px-4"></div>
+    <!-- トースト通知コンテナ -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2"></div>
 
-    <!-- Header Navigation -->
-    <header class="sticky top-0 z-30 bg-slate-800/90 border-b border-slate-700/60 backdrop-blur-md">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xl shadow-lg shadow-indigo-500/20">
-                    <i class="fa-solid fa-user-shield"></i>
-                </div>
-                <div>
-                    <h1 class="text-xl font-bold tracking-wider text-white flex items-center gap-2">
-                        こども選挙 <span class="text-xs px-2.5 py-1 rounded-full bg-slate-700 text-indigo-300 font-semibold border border-slate-600">スタッフポータル</span>
-                    </h1>
-                    <p class="text-xs text-slate-400 font-medium">役職認証・権限管理システム</p>
-                </div>
+    <!-- ヘッダー -->
+    <header class="px-6 py-4 border-b border-slate-800/80 flex items-center justify-between backdrop-blur-sm z-10">
+        <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                <i data-lucide="layers" class="w-4 h-4 text-white"></i>
             </div>
-
-            <div class="flex items-center gap-2.5">
-                <button type="button" id="btn-open-supabase-config" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition flex items-center gap-2" title="Supabase接続設定">
-                    <i class="fa-solid fa-database text-indigo-400"></i>
-                    <span class="hidden sm:inline">DB接続設定</span>
-                </button>
-                <a href="./index.html" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-700/60 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-600/60 transition flex items-center gap-2">
-                    <i class="fa-solid fa-house"></i>
-                    <span>一般ポータル</span>
-                </a>
-                <div id="header-user-widget"></div>
-            </div>
+            <span class="font-bold tracking-tight text-lg bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
+                AuthCore
+            </span>
         </div>
+        <div id="header-user-actions" class="flex items-center gap-3 text-sm"></div>
     </header>
 
-    <!-- Main Container -->
-    <main class="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
-
-        <!-- 警報・リダイレクト通知メッセージ -->
-        <div id="redirect-alert" class="hidden p-4 rounded-2xl border bg-amber-500/10 border-amber-500/30 text-amber-300 flex items-start gap-3">
-            <i class="fa-solid fa-triangle-exclamation text-xl shrink-0 mt-0.5"></i>
-            <div>
-                <h3 class="font-bold text-sm" id="alert-title">アクセス制限</h3>
-                <p class="text-xs text-amber-200/80 mt-1" id="alert-message">この機能を利用するには適切な役職でログインする必要があります。</p>
-            </div>
-        </div>
-
-        <!-- ログイン中の場合の上部ステータス表示 -->
-        <div id="current-session-banner" class="hidden p-6 rounded-3xl bg-slate-800/80 border border-slate-700/80 shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div class="flex items-center gap-4">
-                <div class="w-14 h-14 rounded-2xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center text-2xl">
-                    <i class="fa-solid fa-circle-user"></i>
-                </div>
-                <div>
-                    <div class="text-xs text-slate-400 font-bold uppercase tracking-wider">現在ログイン中のアカウント</div>
-                    <div class="text-lg font-bold text-white flex items-center gap-2 mt-0.5">
-                        <span id="session-user-name">---</span>
-                        <span id="session-user-role-badge">---</span>
-                    </div>
-                    <p class="text-xs text-slate-400 mt-1">ID: <span id="session-username" class="font-mono text-slate-300">---</span></p>
-                </div>
-            </div>
-            <div class="flex items-center gap-2">
-                <button id="btn-session-logout" class="px-4 py-2.5 rounded-xl text-xs font-bold bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 transition flex items-center gap-2">
-                    <i class="fa-solid fa-right-from-bracket"></i> ログアウト
-                </button>
-            </div>
-        </div>
-
-        <!-- ログインフォーム & 役職ワンクリックログインデモ -->
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            
-            <!-- 通常ログイン & サインアップカード -->
-            <div class="lg:col-span-6 bg-slate-800 border border-slate-700/80 rounded-3xl p-6 sm:p-8 shadow-xl">
-                <!-- ログイン / サインアップ タブ切替 -->
-                <div class="flex items-center p-1 bg-slate-900/80 rounded-2xl border border-slate-700/60 mb-6">
-                    <button type="button" id="tab-btn-login"
-                            onclick="document.getElementById('login-form-container').classList.remove('hidden'); document.getElementById('signup-form-container').classList.add('hidden'); this.className='flex-1 py-2 text-xs sm:text-sm font-bold rounded-xl transition-all bg-indigo-600 text-white shadow-md flex items-center justify-center gap-2'; document.getElementById('tab-btn-signup').className='flex-1 py-2 text-xs sm:text-sm font-bold rounded-xl transition-all text-slate-400 hover:text-slate-200 flex items-center justify-center gap-2';"
-                            class="flex-1 py-2 text-xs sm:text-sm font-bold rounded-xl transition-all bg-indigo-600 text-white shadow-md flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-right-to-bracket"></i>
-                        <span>ログイン</span>
-                    </button>
-                    <button type="button" id="tab-btn-signup"
-                            onclick="document.getElementById('login-form-container').classList.add('hidden'); document.getElementById('signup-form-container').classList.remove('hidden'); this.className='flex-1 py-2 text-xs sm:text-sm font-bold rounded-xl transition-all bg-emerald-600 text-white shadow-md flex items-center justify-center gap-2'; document.getElementById('tab-btn-login').className='flex-1 py-2 text-xs sm:text-sm font-bold rounded-xl transition-all text-slate-400 hover:text-slate-200 flex items-center justify-center gap-2';"
-                            class="flex-1 py-2 text-xs sm:text-sm font-bold rounded-xl transition-all text-slate-400 hover:text-slate-200 flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-user-plus"></i>
-                        <span>サインアップ (新規登録)</span>
-                    </button>
-                </div>
-
-                <!-- 1. ログインフォーム領域 -->
-                <div id="login-form-container">
-                    <div class="mb-6">
-                        <h2 class="text-lg font-bold text-white flex items-center gap-2">
-                            <i class="fa-solid fa-key text-indigo-400"></i> ID / パスワード ログイン
-                        </h2>
-                        <p class="text-xs text-slate-400 mt-1">登録済みのスタッフアカウントでログインしてください。</p>
-                    </div>
-
-                    <!-- エラー・成功インラインアラート -->
-                    <div id="login-error-alert" class="hidden p-3.5 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-300 text-xs font-bold mb-4 flex items-center gap-2">
-                        <i class="fa-solid fa-circle-exclamation text-rose-400 text-base shrink-0"></i>
-                        <span id="login-error-text">ユーザー名またはパスワードが正しくありません。</span>
-                    </div>
-                    <div id="login-success-alert" class="hidden p-3.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold mb-4 flex items-center gap-2">
-                        <i class="fa-solid fa-circle-check text-emerald-400 text-base shrink-0 animate-bounce"></i>
-                        <span id="login-success-text">ログインに成功しました。画面を切り替えています...</span>
-                    </div>
-
-                    <form id="login-form" class="space-y-4">
-                        <div>
-                            <label for="username" class="block text-xs font-bold text-slate-300 mb-1.5">ユーザー名 (ID)</label>
-                            <div class="relative">
-                                <i class="fa-solid fa-user absolute left-3.5 top-3 text-slate-500 text-sm"></i>
-                                <input type="text" id="username" required placeholder="例: staff_unei" 
-                                       class="w-full pl-10 pr-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm font-medium text-slate-100 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
-                            </div>
-                        </div>
-
-                        <div>
-                            <label for="password" class="block text-xs font-bold text-slate-300 mb-1.5">パスワード</label>
-                            <div class="relative">
-                                <i class="fa-solid fa-lock absolute left-3.5 top-3 text-slate-500 text-sm"></i>
-                                <input type="password" id="password" required placeholder="••••••••" 
-                                       class="w-full pl-10 pr-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm font-medium text-slate-100 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
-                            </div>
-                        </div>
-
-                        <div class="flex items-center justify-between pt-1">
-                            <label class="flex items-center gap-2 cursor-pointer">
-                                <input type="checkbox" id="remember-me" checked class="rounded border-slate-700 text-indigo-600 focus:ring-indigo-500 bg-slate-900">
-                                <span class="text-xs text-slate-400 font-medium">ログイン状態を保存</span>
-                            </label>
-                        </div>
-
-                        <button type="submit" id="btn-submit-login" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold rounded-xl shadow-lg shadow-indigo-600/30 transition flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-right-to-bracket"></i> ログインする
-                        </button>
-                    </form>
-
-                    <div class="mt-6 pt-4 border-t border-slate-700/60 text-center">
-                        <p class="text-xs text-slate-400">
-                            アカウントをお持ちでないですか？ 
-                            <button type="button" id="link-to-signup"
-                                    onclick="document.getElementById('login-form-container').classList.add('hidden'); document.getElementById('signup-form-container').classList.remove('hidden'); document.getElementById('tab-btn-signup').className='flex-1 py-2 text-xs sm:text-sm font-bold rounded-xl transition-all bg-emerald-600 text-white shadow-md flex items-center justify-center gap-2'; document.getElementById('tab-btn-login').className='flex-1 py-2 text-xs sm:text-sm font-bold rounded-xl transition-all text-slate-400 hover:text-slate-200 flex items-center justify-center gap-2';"
-                                    class="text-indigo-400 hover:text-indigo-300 font-bold underline ml-1">サインアップへ</button>
-                        </p>
-                    </div>
-                </div>
-
-                <!-- 2. サインアップ (新規アカウント登録) フォーム領域 -->
-                <div id="signup-form-container" class="hidden">
-                    <div class="mb-6">
-                        <h2 class="text-lg font-bold text-white flex items-center gap-2">
-                            <i class="fa-solid fa-user-plus text-emerald-400"></i> 新規スタッフ登録 (サインアップ)
-                        </h2>
-                        <p class="text-xs text-slate-400 mt-1">新しいアカウントを作成し、希望する役職を付与して利用開始します。</p>
-                    </div>
-
-                    <!-- サインアップ エラー・成功インラインアラート -->
-                    <div id="signup-error-alert" class="hidden p-3.5 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-300 text-xs font-bold mb-4 flex items-center gap-2">
-                        <i class="fa-solid fa-circle-exclamation text-rose-400 text-base shrink-0"></i>
-                        <span id="signup-error-text">登録エラーが発生しました。</span>
-                    </div>
-                    <div id="signup-success-alert" class="hidden p-3.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold mb-4 flex items-center gap-2">
-                        <i class="fa-solid fa-circle-check text-emerald-400 text-base shrink-0 animate-bounce"></i>
-                        <span id="signup-success-text">アカウントを作成しました。画面を切り替えています...</span>
-                    </div>
-
-                    <form id="signup-form" class="space-y-4">
-                        <div>
-                            <label for="signup-username" class="block text-xs font-bold text-slate-300 mb-1.5">ユーザー名 (ID)</label>
-                            <div class="relative">
-                                <i class="fa-solid fa-at absolute left-3.5 top-3 text-slate-500 text-sm"></i>
-                                <input type="text" id="signup-username" required placeholder="例: tanaka_staff" 
-                                       class="w-full pl-10 pr-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm font-medium text-slate-100 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
-                            </div>
-                        </div>
-
-                        <div>
-                            <label for="signup-name" class="block text-xs font-bold text-slate-300 mb-1.5">氏名 (表示名)</label>
-                            <div class="relative">
-                                <i class="fa-solid fa-id-card absolute left-3.5 top-3 text-slate-500 text-sm"></i>
-                                <input type="text" id="signup-name" required placeholder="例: 田中 太郎" 
-                                       class="w-full pl-10 pr-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm font-medium text-slate-100 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
-                            </div>
-                        </div>
-
-                        <div>
-                            <label for="signup-email" class="block text-xs font-bold text-slate-300 mb-1.5">メールアドレス <span class="text-slate-500 font-normal">(任意 / 未入力時は自動生成)</span></label>
-                            <div class="relative">
-                                <i class="fa-solid fa-envelope absolute left-3.5 top-3 text-slate-500 text-sm"></i>
-                                <input type="email" id="signup-email" placeholder="例: tanaka@example.com" 
-                                       class="w-full pl-10 pr-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm font-medium text-slate-100 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
-                            </div>
-                        </div>
-
-                        <div>
-                            <label for="signup-role" class="block text-xs font-bold text-slate-300 mb-1.5">付与する役職 (権限)</label>
-                            <div class="relative">
-                                <i class="fa-solid fa-briefcase absolute left-3.5 top-3 text-slate-500 text-sm"></i>
-                                <select id="signup-role" required 
-                                        class="w-full pl-10 pr-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm font-bold text-slate-100 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
-                                    <option value="運営">運営 (受付 / ダッシュボード操作)</option>
-                                    <option value="開票担当者">開票担当者 (票数照合・集計入力)</option>
-                                    <option value="管理者">管理者 (全機能 + アカウント・役職管理)</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div>
-                            <label for="signup-password" class="block text-xs font-bold text-slate-300 mb-1.5">パスワード (4文字以上)</label>
-                            <div class="relative">
-                                <i class="fa-solid fa-lock absolute left-3.5 top-3 text-slate-500 text-sm"></i>
-                                <input type="password" id="signup-password" required minlength="4" placeholder="••••••••" 
-                                       class="w-full pl-10 pr-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm font-medium text-slate-100 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
-                            </div>
-                        </div>
-
-                        <div>
-                            <label for="signup-confirm-password" class="block text-xs font-bold text-slate-300 mb-1.5">パスワード (再入力)</label>
-                            <div class="relative">
-                                <i class="fa-solid fa-circle-check absolute left-3.5 top-3 text-slate-500 text-sm"></i>
-                                <input type="password" id="signup-confirm-password" required minlength="4" placeholder="••••••••" 
-                                       class="w-full pl-10 pr-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm font-medium text-slate-100 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
-                            </div>
-                        </div>
-
-                        <button type="submit" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold rounded-xl shadow-lg shadow-emerald-600/30 transition flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-user-plus"></i> アカウントを作成してログイン
-                        </button>
-                    </form>
-
-                    <div class="mt-6 pt-4 border-t border-slate-700/60 text-center">
-                        <p class="text-xs text-slate-400">
-                            すでにアカウントをお持ちですか？ 
-                            <button type="button" id="link-to-login"
-                                    onclick="document.getElementById('login-form-container').classList.remove('hidden'); document.getElementById('signup-form-container').classList.add('hidden'); document.getElementById('tab-btn-login').className='flex-1 py-2 text-xs sm:text-sm font-bold rounded-xl transition-all bg-indigo-600 text-white shadow-md flex items-center justify-center gap-2'; document.getElementById('tab-btn-signup').className='flex-1 py-2 text-xs sm:text-sm font-bold rounded-xl transition-all text-slate-400 hover:text-slate-200 flex items-center justify-center gap-2';"
-                                    class="text-emerald-400 hover:text-emerald-300 font-bold underline ml-1">ログインへ</button>
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Supabase データベース接続ステータス -->
-            <div class="lg:col-span-6 space-y-4">
-                <div class="bg-slate-800/80 border border-slate-700/80 rounded-3xl p-6 shadow-xl space-y-5">
-                    <div class="flex items-center justify-between border-b border-slate-700/80 pb-4">
-                        <h2 class="text-sm font-bold text-white flex items-center gap-2">
-                            <i class="fa-solid fa-database text-emerald-400"></i> Supabase 本番DB接続ステータス
-                        </h2>
-                        <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5">
-                            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                            接続有効
-                        </span>
-                    </div>
-
-                    <p class="text-xs text-slate-300 leading-relaxed">
-                        本システムは Supabase Auth および PostgreSQL データベースに直接接続して認証・権限管理を行っています。
-                    </p>
-
-                    <div class="space-y-3 bg-slate-900/80 p-4 rounded-2xl border border-slate-700/60 font-mono text-xs">
-                        <div>
-                            <div class="text-[0.65rem] text-slate-400 font-bold uppercase tracking-wider mb-1">プロジェクト URL (.env)</div>
-                            <div class="text-indigo-300 font-semibold truncate" id="display-supabase-url">https://yuxvrgkmjorzcgrtjmoz.supabase.co</div>
-                        </div>
-                        <div class="pt-2 border-t border-slate-800">
-                            <div class="text-[0.65rem] text-slate-400 font-bold uppercase tracking-wider mb-1">認証方式</div>
-                            <div class="text-emerald-400 font-semibold flex items-center gap-2">
-                                <i class="fa-solid fa-lock"></i> Supabase Auth (JWT + RLS 認可)
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-200/90 space-y-2">
-                        <div class="font-bold flex items-center gap-1.5 text-amber-300">
-                            <i class="fa-solid fa-shield"></i> 管理者機能のご案内
-                        </div>
-                        <p class="text-[0.75rem] leading-relaxed">
-                            新規スタッフの方は「サインアップ (新規登録)」タブからアカウントを作成してください。<br>
-                            スタッフのアカウント一覧参照・役職権限割り当て・変更などの管理者機能はすべて **<a href="./admin.html" class="underline font-bold text-amber-300 hover:text-amber-200">管理者パネル (admin.html)</a>** に統合されました。
-                        </p>
-                    </div>
-                </div>
-            </div>
+    <!-- メインコンテンツ -->
+    <main class="flex-1 flex items-center justify-center p-4 z-10">
+        <div class="w-full max-w-md" id="app-view-container">
+            <!-- JSによって login | register | forgot | dashboard 画面が動的描画されます -->
         </div>
     </main>
 
-
-    <!-- Footer -->
-    <footer class="bg-slate-900 border-t border-slate-800 py-6 mt-12 text-center text-xs text-slate-500">
-        <div class="max-w-7xl mx-auto px-4">
-            <p>こども選挙 システム運営事務局 &copy; 2026 - 役割ベースアクセス制御 (RBAC) 認証基盤</p>
-        </div>
+    <!-- フッター -->
+    <footer class="py-4 text-center text-xs text-slate-500 border-t border-slate-900 z-10">
+        &copy; 2026 AuthCore Platform. 安全なセッション管理システム
     </footer>
-
-    <!-- Supabase 接続設定モーダル -->
-    <div id="supabase-config-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
-        <div class="bg-slate-900 border border-slate-700 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-6">
-            <div class="flex items-center justify-between border-b border-slate-800 pb-4">
-                <h3 class="text-base font-bold text-white flex items-center gap-2">
-                    <i class="fa-solid fa-database text-indigo-400"></i> Supabase 接続設定
-                </h3>
-                <button type="button" id="btn-close-supabase-config" class="text-slate-400 hover:text-white transition text-lg">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            </div>
-            
-            <p class="text-xs text-slate-400 leading-relaxed">
-                Supabase プロジェクトの URL と Anon Key を設定すると、本番DB認証に切り替わります。未設定時はデモ・ローカルモードで動作します。
-            </p>
-
-            <form id="supabase-config-form" class="space-y-4">
-                <div>
-                    <label for="cfg-supabase-url" class="block text-xs font-bold text-slate-300 mb-1.5">Supabase Project URL</label>
-                    <input type="url" id="cfg-supabase-url" placeholder="https://xxxx.supabase.co" class="w-full px-3.5 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-xs font-mono text-slate-100 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
-                </div>
-                <div>
-                    <label for="cfg-supabase-key" class="block text-xs font-bold text-slate-300 mb-1.5">Supabase Anon Key</label>
-                    <input type="text" id="cfg-supabase-key" placeholder="ey..." class="w-full px-3.5 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-xs font-mono text-slate-100 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
-                </div>
-
-                <div class="flex items-center justify-between pt-2">
-                    <button type="button" id="btn-clear-supabase-config" class="px-3 py-2 rounded-xl text-xs font-bold bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 transition">
-                        設定クリア (デモに戻す)
-                    </button>
-                    <button type="submit" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-indigo-600/30 transition flex items-center gap-2">
-                        <i class="fa-solid fa-floppy-disk"></i> 保存して適用
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
 
     <!-- Script -->
     <script type="module" src="./login.js"></script>
