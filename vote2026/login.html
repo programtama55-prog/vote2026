@@ -129,11 +129,15 @@
             <div class="lg:col-span-6 bg-slate-800 border border-slate-700/80 rounded-3xl p-6 sm:p-8 shadow-xl">
                 <!-- ログイン / サインアップ タブ切替 -->
                 <div class="flex items-center p-1 bg-slate-900/80 rounded-2xl border border-slate-700/60 mb-6">
-                    <button type="button" id="tab-btn-login" class="flex-1 py-2 text-xs sm:text-sm font-bold rounded-xl transition-all bg-indigo-600 text-white shadow-md flex items-center justify-center gap-2">
+                    <button type="button" id="tab-btn-login"
+                            onclick="document.getElementById('login-form-container').classList.remove('hidden'); document.getElementById('signup-form-container').classList.add('hidden'); this.className='flex-1 py-2 text-xs sm:text-sm font-bold rounded-xl transition-all bg-indigo-600 text-white shadow-md flex items-center justify-center gap-2'; document.getElementById('tab-btn-signup').className='flex-1 py-2 text-xs sm:text-sm font-bold rounded-xl transition-all text-slate-400 hover:text-slate-200 flex items-center justify-center gap-2';"
+                            class="flex-1 py-2 text-xs sm:text-sm font-bold rounded-xl transition-all bg-indigo-600 text-white shadow-md flex items-center justify-center gap-2">
                         <i class="fa-solid fa-right-to-bracket"></i>
                         <span>ログイン</span>
                     </button>
-                    <button type="button" id="tab-btn-signup" class="flex-1 py-2 text-xs sm:text-sm font-bold rounded-xl transition-all text-slate-400 hover:text-slate-200 flex items-center justify-center gap-2">
+                    <button type="button" id="tab-btn-signup"
+                            onclick="document.getElementById('login-form-container').classList.add('hidden'); document.getElementById('signup-form-container').classList.remove('hidden'); this.className='flex-1 py-2 text-xs sm:text-sm font-bold rounded-xl transition-all bg-emerald-600 text-white shadow-md flex items-center justify-center gap-2'; document.getElementById('tab-btn-login').className='flex-1 py-2 text-xs sm:text-sm font-bold rounded-xl transition-all text-slate-400 hover:text-slate-200 flex items-center justify-center gap-2';"
+                            class="flex-1 py-2 text-xs sm:text-sm font-bold rounded-xl transition-all text-slate-400 hover:text-slate-200 flex items-center justify-center gap-2">
                         <i class="fa-solid fa-user-plus"></i>
                         <span>サインアップ (新規登録)</span>
                     </button>
@@ -182,7 +186,9 @@
                     <div class="mt-6 pt-4 border-t border-slate-700/60 text-center">
                         <p class="text-xs text-slate-400">
                             アカウントをお持ちでないですか？ 
-                            <button type="button" id="link-to-signup" class="text-indigo-400 hover:text-indigo-300 font-bold underline ml-1">サインアップへ</button>
+                            <button type="button" id="link-to-signup"
+                                    onclick="document.getElementById('login-form-container').classList.add('hidden'); document.getElementById('signup-form-container').classList.remove('hidden'); document.getElementById('tab-btn-signup').className='flex-1 py-2 text-xs sm:text-sm font-bold rounded-xl transition-all bg-emerald-600 text-white shadow-md flex items-center justify-center gap-2'; document.getElementById('tab-btn-login').className='flex-1 py-2 text-xs sm:text-sm font-bold rounded-xl transition-all text-slate-400 hover:text-slate-200 flex items-center justify-center gap-2';"
+                                    class="text-indigo-400 hover:text-indigo-300 font-bold underline ml-1">サインアップへ</button>
                         </p>
                     </div>
                 </div>
@@ -263,7 +269,9 @@
                     <div class="mt-6 pt-4 border-t border-slate-700/60 text-center">
                         <p class="text-xs text-slate-400">
                             すでにアカウントをお持ちですか？ 
-                            <button type="button" id="link-to-login" class="text-emerald-400 hover:text-emerald-300 font-bold underline ml-1">ログインへ</button>
+                            <button type="button" id="link-to-login"
+                                    onclick="document.getElementById('login-form-container').classList.remove('hidden'); document.getElementById('signup-form-container').classList.add('hidden'); document.getElementById('tab-btn-login').className='flex-1 py-2 text-xs sm:text-sm font-bold rounded-xl transition-all bg-indigo-600 text-white shadow-md flex items-center justify-center gap-2'; document.getElementById('tab-btn-signup').className='flex-1 py-2 text-xs sm:text-sm font-bold rounded-xl transition-all text-slate-400 hover:text-slate-200 flex items-center justify-center gap-2';"
+                                    class="text-emerald-400 hover:text-emerald-300 font-bold underline ml-1">ログインへ</button>
                         </p>
                     </div>
                 </div>

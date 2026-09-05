@@ -58,17 +58,18 @@ function switchFormTab(tab) {
   const containerSignup = document.getElementById('signup-form-container');
 
   if (tab === 'signup') {
-    tabLogin.className = 'flex-1 py-2 text-xs sm:text-sm font-bold rounded-xl transition-all text-slate-400 hover:text-slate-200 flex items-center justify-center gap-2';
-    tabSignup.className = 'flex-1 py-2 text-xs sm:text-sm font-bold rounded-xl transition-all bg-emerald-600 text-white shadow-md flex items-center justify-center gap-2';
-    containerLogin.classList.add('hidden');
-    containerSignup.classList.remove('hidden');
+    if (tabLogin) tabLogin.className = 'flex-1 py-2 text-xs sm:text-sm font-bold rounded-xl transition-all text-slate-400 hover:text-slate-200 flex items-center justify-center gap-2';
+    if (tabSignup) tabSignup.className = 'flex-1 py-2 text-xs sm:text-sm font-bold rounded-xl transition-all bg-emerald-600 text-white shadow-md flex items-center justify-center gap-2';
+    if (containerLogin) containerLogin.classList.add('hidden');
+    if (containerSignup) containerSignup.classList.remove('hidden');
   } else {
-    tabLogin.className = 'flex-1 py-2 text-xs sm:text-sm font-bold rounded-xl transition-all bg-indigo-600 text-white shadow-md flex items-center justify-center gap-2';
-    tabSignup.className = 'flex-1 py-2 text-xs sm:text-sm font-bold rounded-xl transition-all text-slate-400 hover:text-slate-200 flex items-center justify-center gap-2';
-    containerLogin.classList.remove('hidden');
-    containerSignup.classList.add('hidden');
+    if (tabLogin) tabLogin.className = 'flex-1 py-2 text-xs sm:text-sm font-bold rounded-xl transition-all bg-indigo-600 text-white shadow-md flex items-center justify-center gap-2';
+    if (tabSignup) tabSignup.className = 'flex-1 py-2 text-xs sm:text-sm font-bold rounded-xl transition-all text-slate-400 hover:text-slate-200 flex items-center justify-center gap-2';
+    if (containerLogin) containerLogin.classList.remove('hidden');
+    if (containerSignup) containerSignup.classList.add('hidden');
   }
 }
+window.switchFormTab = switchFormTab;
 
 // 現在のセッションバナーの更新
 function refreshSessionBanner() {
