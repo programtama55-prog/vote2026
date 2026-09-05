@@ -9,6 +9,7 @@ import { showToast, escapeHtml } from '@/lib/utils.js';
 const STORAGE_PREFIX = 'kodomo_senkyo_';
 const STORAGE_CURRENT_USER = STORAGE_PREFIX + 'current_user';
 const STORAGE_LOCAL_ACCOUNTS = STORAGE_PREFIX + 'local_accounts';
+const STORAGE_INVITE_CODES = STORAGE_PREFIX + 'invite_codes';
 
 export const ROLES = {
   UNEI: '運営',
@@ -17,12 +18,48 @@ export const ROLES = {
 };
 
 function getStoredLocalAccounts() {
+  const accounts = [];
+  const usernames = new Set();
+
   try {
     const raw = localStorage.getItem(STORAGE_LOCAL_ACCOUNTS);
-    return raw ? JSON.parse(raw) : [];
-  } catch (e) {
-    return [];
-  }
+    const data = raw ? JSON.parse(raw) : [];
+    if (Array.isArray(data)) {
+      data.forEach(a => {
+        const un = (a.username || a.email || a.id || '').toLowerCase();
+        if (un && !usernames.has(un)) {
+          usernames.add(un);
+          accounts.push(a);
+        }
+      });
+    }
+  } catch (e) {}
+
+  try {
+    const rawAuthCore = localStorage.getItem('authcore_registered_users');
+    const authCoreUsers = rawAuthCore ? JSON.parse(rawAuthCore) : [];
+    if (Array.isArray(authCoreUsers)) {
+      authCoreUsers.forEach(u => {
+        const un = (u.email ? u.email.split('@')[0] : u.name || u.id).toLowerCase();
+        const em = (u.email || '').toLowerCase();
+        if ((un && !usernames.has(un)) && (!em || !usernames.has(em))) {
+          usernames.add(un);
+          if (em) usernames.add(em);
+          accounts.push({
+            id: u.id,
+            username: u.email ? u.email.split('@')[0] : u.name,
+            name: u.name,
+            role: u.role || ROLES.UNEI,
+            email: u.email,
+            password: u.password,
+            createdAt: u.createdAt || ''
+          });
+        }
+      });
+    }
+  } catch (e) {}
+
+  return accounts;
 }
 
 function saveLocalAccount(account) {
@@ -38,6 +75,169 @@ function saveLocalAccount(account) {
   } catch (e) {
     console.warn('ローカルアカウント保存エラー:', e);
   }
+}
+
+export function getStoredInviteCodes() {
+  try {
+    const raw = localStorage.getItem(STORAGE_INVITE_CODES);
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+export function saveInviteCodes(codes) {
+  try {
+    localStorage.setItem(STORAGE_INVITE_CODES, JSON.stringify(codes));
+    window.dispatchEvent(new Event('storage'));
+  } catch (e) {
+    console.warn('招待コード保存エラー:', e);
+  }
+}
+
+/**
+ * 招待コードを生成 (例: INV-8A3F9B)
+ * @param {string} role '運営' | '開票担当者' | '管理者'
+ * @param {string} [note] 備考/メモ
+ * @returns {Promise<Object>} 生成された招待コードオブジェクト
+ */
+export async function generateInviteCode(role, note = '') {
+  if (!Object.values(ROLES).includes(role)) {
+    return { success: false, message: '無効な役職が指定されました。' };
+  }
+
+  const randomChars = Math.random().toString(36).substring(2, 8).toUpperCase();
+  const code = `INV-${randomChars}`;
+  const currentUser = getCurrentUser();
+
+  const inviteItem = {
+    code: code,
+    role: role,
+    note: note ? note.trim() : '',
+    created_at: new Date().toISOString(),
+    created_by: currentUser ? currentUser.username : 'admin',
+    is_used: false,
+    used_by: null,
+    used_at: null
+  };
+
+  const codes = getStoredInviteCodes();
+  codes.unshift(inviteItem);
+  saveInviteCodes(codes);
+
+  // 非ブロッキングでバックグラウンドにてSupabase DBへ保存試行
+  if (isSupabaseConfigured() && supabase) {
+    supabase.from('staff_invite_codes').insert({
+      code: code,
+      role: role,
+      note: note,
+      created_by: currentUser ? currentUser.username : 'admin',
+      is_used: false
+    }).then(({ error }) => {
+      if (error) console.warn('Supabase DBへの招待コード保存警告:', error.message);
+    }).catch(e => console.warn('Supabase DBへの招待コード保存例外:', e));
+  }
+
+  return { success: true, invite: inviteItem };
+}
+
+/**
+ * 発行済み招待コード一覧を取得 (1秒タイムアウト付き安全フォールバック)
+ * @returns {Promise<Array>}
+ */
+export async function getInviteCodes() {
+  const localCodes = getStoredInviteCodes();
+  if (isSupabaseConfigured() && supabase) {
+    try {
+      const fetchPromise = supabase.from('staff_invite_codes').select('*').order('created_at', { ascending: false });
+      const timeoutPromise = new Promise(resolve => setTimeout(() => resolve({ data: null, error: 'timeout' }), 1000));
+      
+      const { data, error } = await Promise.race([fetchPromise, timeoutPromise]);
+      if (!error && data) {
+        const remoteCodes = new Set(data.map(c => c.code ? c.code.toUpperCase() : ''));
+        const merged = [...data];
+        for (const loc of localCodes) {
+          if (loc.code && !remoteCodes.has(loc.code.toUpperCase())) {
+            merged.unshift(loc);
+          }
+        }
+        return merged;
+      }
+    } catch (e) {}
+  }
+  return localCodes;
+}
+
+/**
+ * 招待コードの検証
+ * @param {string} code 
+ * @returns {Promise<Object>} { valid: boolean, role?: string, message?: string, invite?: Object }
+ */
+export async function validateInviteCode(code) {
+  if (!code || !code.trim()) {
+    return { valid: false, message: '招待コードを入力してください。' };
+  }
+
+  const cleanCode = code.trim().toUpperCase();
+  const codes = await getInviteCodes();
+  const found = codes.find(c => c.code && c.code.toUpperCase() === cleanCode);
+
+  if (!found) {
+    return { valid: false, message: '入力された招待コードが存在しません。' };
+  }
+
+  if (found.is_used) {
+    return { valid: false, message: 'この招待コードは既に使用されています。' };
+  }
+
+  return { valid: true, role: found.role, invite: found };
+}
+
+/**
+ * 招待コードを使用済みに更新
+ * @param {string} code 
+ * @param {string} username 
+ */
+export async function markInviteCodeUsed(code, username) {
+  if (!code) return;
+  const cleanCode = code.trim().toUpperCase();
+  const localCodes = getStoredInviteCodes();
+  const idx = localCodes.findIndex(c => c.code && c.code.toUpperCase() === cleanCode);
+  if (idx >= 0) {
+    localCodes[idx].is_used = true;
+    localCodes[idx].used_by = username;
+    localCodes[idx].used_at = new Date().toISOString();
+    saveInviteCodes(localCodes);
+  }
+
+  if (isSupabaseConfigured() && supabase) {
+    try {
+      await supabase.from('staff_invite_codes').update({
+        is_used: true,
+        used_by: username,
+        used_at: new Date().toISOString()
+      }).eq('code', cleanCode);
+    } catch (e) {}
+  }
+}
+
+/**
+ * 招待コードの削除・無効化
+ * @param {string} code 
+ */
+export async function deleteInviteCode(code) {
+  if (!code) return { success: false };
+  const cleanCode = code.trim().toUpperCase();
+  const localCodes = getStoredInviteCodes().filter(c => !c.code || c.code.toUpperCase() !== cleanCode);
+  saveInviteCodes(localCodes);
+
+  if (isSupabaseConfigured() && supabase) {
+    try {
+      await supabase.from('staff_invite_codes').delete().eq('code', cleanCode);
+    } catch (e) {}
+  }
+
+  return { success: true };
 }
 
 /**
@@ -233,9 +433,18 @@ export async function login(username, password, remember = true) {
  * @param {Object} param0 { username, email, name, role, password, confirmPassword, autoLogin }
  * @returns {Promise<Object>} { success: boolean, message?: string, user?: Object }
  */
-export async function signUp({ username, email, name, role, password, confirmPassword, autoLogin = true }) {
-  if (!username || !name || !role || !password || !confirmPassword) {
+export async function signUp({ username, email, name, role, password, confirmPassword, inviteCode, autoLogin = true }) {
+  if (!username || !name || !password || !confirmPassword) {
     return { success: false, message: 'すべての項目を入力してください。' };
+  }
+
+  let targetRole = role;
+  if (inviteCode || !role) {
+    const inviteValidation = await validateInviteCode(inviteCode);
+    if (!inviteValidation.valid) {
+      return { success: false, message: inviteValidation.message };
+    }
+    targetRole = inviteValidation.role;
   }
   
   if (password !== confirmPassword) {
@@ -246,19 +455,23 @@ export async function signUp({ username, email, name, role, password, confirmPas
     return { success: false, message: 'パスワードは4文字以上で入力してください。' };
   }
 
-  if (!Object.values(ROLES).includes(role)) {
+  if (!Object.values(ROLES).includes(targetRole)) {
     return { success: false, message: '無効な役職です。「運営」「開票担当者」「管理者」から指定してください。' };
   }
 
   const cleanUsername = username.trim();
   const cleanName = name.trim();
 
+  if (inviteCode) {
+    await markInviteCodeUsed(inviteCode, cleanUsername);
+  }
+
   // ローカルアカウントに保存（ネットワークエラー・メール確認エラー時のフォールバック保護）
   const localAcc = {
     id: 'local_' + Date.now(),
     username: cleanUsername,
     name: cleanName,
-    role: role,
+    role: targetRole,
     email: email || toEmail(cleanUsername, email),
     password: password,
     createdAt: new Date().toISOString()
@@ -274,7 +487,7 @@ export async function signUp({ username, email, name, role, password, confirmPas
         data: {
           username: cleanUsername,
           name: cleanName,
-          role: role
+          role: targetRole
         }
       }
     });
@@ -288,7 +501,7 @@ export async function signUp({ username, email, name, role, password, confirmPas
           id: data.user.id,
           username: cleanUsername,
           name: cleanName,
-          role: role
+          role: targetRole
         });
       } catch (dbErr) {
         console.warn('staff_accounts upsert例外:', dbErr);
@@ -299,7 +512,7 @@ export async function signUp({ username, email, name, role, password, confirmPas
           id: data.user.id,
           username: cleanUsername,
           name: cleanName,
-          role: role,
+          role: targetRole,
           email: data.user.email,
           loggedInAt: new Date().toISOString()
         };
@@ -317,7 +530,7 @@ export async function signUp({ username, email, name, role, password, confirmPas
       id: localAcc.id,
       username: cleanUsername,
       name: cleanName,
-      role: role,
+      role: targetRole,
       email: localAcc.email,
       loggedInAt: new Date().toISOString()
     };
@@ -325,7 +538,7 @@ export async function signUp({ username, email, name, role, password, confirmPas
     return { success: true, user: userSession, provider: 'local' };
   }
   
-  return { success: true, account: { username: cleanUsername, name: cleanName, role } };
+  return { success: true, account: { username: cleanUsername, name: cleanName, role: targetRole } };
 }
 
 /**
@@ -513,13 +726,13 @@ export async function checkPageAccess(allowedRoles = []) {
 export function getRoleBadgeHtml(role) {
   switch (role) {
     case ROLES.UNEI:
-      return `<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-sky-500/10 text-sky-400 border border-sky-500/30 flex items-center gap-1.5 inline-flex"><i class="fa-solid fa-users-gear"></i>運営</span>`;
+      return `<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-sky-50 text-sky-700 border border-sky-200 flex items-center gap-1.5 inline-flex"><i class="fa-solid fa-users-gear text-sky-600"></i>運営</span>`;
     case ROLES.KAIHYO:
-      return `<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5 inline-flex"><i class="fa-solid fa-box-archive"></i>開票担当者</span>`;
+      return `<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1.5 inline-flex"><i class="fa-solid fa-box-archive text-emerald-600"></i>開票担当者</span>`;
     case ROLES.ADMIN:
-      return `<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30 flex items-center gap-1.5 inline-flex"><i class="fa-solid fa-user-shield"></i>管理者</span>`;
+      return `<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200 flex items-center gap-1.5 inline-flex"><i class="fa-solid fa-user-shield text-amber-600"></i>管理者</span>`;
     default:
-      return `<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-500/10 text-slate-400 border border-slate-500/30">${role}</span>`;
+      return `<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200">${role}</span>`;
   }
 }
 
@@ -551,26 +764,26 @@ export function renderAuthHeaderWidget(containerIdOrElement) {
   let pageLinks = '';
   if (user.role === ROLES.UNEI || user.role === ROLES.ADMIN) {
     pageLinks += `
-      <a href="./reception.html" class="px-2 py-1.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-100 border border-slate-700 transition flex items-center gap-1 shadow-sm" title="受付管理">
-        <i class="fa-solid fa-id-card text-sky-400"></i><span class="hidden sm:inline">受付</span>
+      <a href="./reception.html" class="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 transition flex items-center gap-1 shadow-xs" title="受付管理">
+        <i class="fa-solid fa-id-card text-sky-600"></i><span class="hidden sm:inline">受付</span>
       </a>
-      <a href="./dashboard.html" class="px-2 py-1.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-100 border border-slate-700 transition flex items-center gap-1 shadow-sm" title="運営ダッシュボード">
-        <i class="fa-solid fa-chart-line text-indigo-400"></i><span class="hidden sm:inline">ダッシュボード</span>
+      <a href="./dashboard.html" class="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 transition flex items-center gap-1 shadow-xs" title="運営ダッシュボード">
+        <i class="fa-solid fa-chart-line text-indigo-600"></i><span class="hidden sm:inline">ダッシュボード</span>
       </a>
     `;
   }
   if (user.role === ROLES.KAIHYO || user.role === ROLES.ADMIN) {
     pageLinks += `
-      <a href="./tally.html" class="px-2 py-1.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-100 border border-slate-700 transition flex items-center gap-1 shadow-sm" title="開票・集計">
-        <i class="fa-solid fa-calculator text-emerald-400"></i><span class="hidden sm:inline">開票</span>
+      <a href="./tally.html" class="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 transition flex items-center gap-1 shadow-xs" title="開票・集計">
+        <i class="fa-solid fa-calculator text-emerald-600"></i><span class="hidden sm:inline">開票</span>
       </a>
     `;
   }
   
   if (user.role === ROLES.ADMIN) {
     pageLinks += `
-      <a href="./admin.html" class="px-2 py-1.5 rounded-xl text-xs font-bold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 transition flex items-center gap-1 shadow-sm" title="管理者パネル (管理者専用)">
-        <i class="fa-solid fa-user-shield text-amber-400"></i><span class="hidden sm:inline">管理者パネル</span>
+      <a href="./admin.html" class="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 transition flex items-center gap-1 shadow-xs" title="管理者パネル (管理者専用)">
+        <i class="fa-solid fa-user-shield text-indigo-600"></i><span class="hidden sm:inline">管理者パネル</span>
       </a>
     `;
   }
@@ -580,26 +793,26 @@ export function renderAuthHeaderWidget(containerIdOrElement) {
       ${pageLinks}
 
       <!-- ログインステータス アイコンマーク & プロフィールカード -->
-      <div class="flex items-center gap-2.5 bg-slate-900 text-white px-3 py-1.5 rounded-2xl border-2 border-emerald-400/80 shadow-xl transition-all">
-        <div class="relative flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow font-bold text-sm shrink-0" title="ログイン中: ${escapeHtml(user.name)}">
+      <div class="flex items-center gap-2.5 bg-white text-slate-800 px-3 py-1.5 rounded-2xl border border-slate-200 shadow-xs transition-all">
+        <div class="relative flex items-center justify-center w-8 h-8 rounded-xl bg-indigo-600 text-white shadow font-bold text-sm shrink-0" title="ログイン中: ${escapeHtml(user.name)}">
           <i class="fa-solid fa-user-check"></i>
-          <span class="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-400 border-2 border-slate-900 shadow">
+          <span class="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-white shadow">
             <span class="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-80"></span>
           </span>
         </div>
 
         <div class="text-left leading-tight">
-          <div class="text-xs font-bold text-white flex items-center gap-1.5">
+          <div class="text-xs font-bold text-slate-900 flex items-center gap-1.5">
             <span>${escapeHtml(user.name)}</span>
-            <span class="text-[0.6rem] px-1.5 py-0.2 bg-emerald-500/30 text-emerald-300 font-black rounded border border-emerald-400/40">ログイン中</span>
+            <span class="text-[0.6rem] px-1.5 py-0.2 bg-emerald-50 text-emerald-700 font-bold rounded border border-emerald-200">ログイン中</span>
           </div>
           <div class="mt-0.5">${getRoleBadgeHtml(user.role)}</div>
         </div>
       </div>
 
       <!-- ログアウトボタン -->
-      <button id="auth-logout-btn" class="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-rose-600/30 text-slate-200 hover:text-rose-300 border border-slate-700 transition flex items-center gap-1 shadow-sm" title="ログアウト">
-        <i class="fa-solid fa-right-from-bracket text-rose-400"></i>
+      <button id="auth-logout-btn" class="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 transition flex items-center gap-1 shadow-xs" title="ログアウト">
+        <i class="fa-solid fa-right-from-bracket text-rose-600"></i>
         <span class="hidden sm:inline">ログアウト</span>
       </button>
     </div>

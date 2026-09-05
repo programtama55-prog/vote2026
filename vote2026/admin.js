@@ -7,6 +7,9 @@ import {
   updateAccountRole, 
   deleteAccount, 
   getRoleBadgeHtml, 
+  generateInviteCode,
+  getInviteCodes,
+  deleteInviteCode,
   ROLES 
 } from '@/lib/auth.js';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase.js';
@@ -15,16 +18,16 @@ import { showToast, escapeHtml } from '@/lib/utils.js';
 let currentUser = null;
 
 async function init() {
-  // 1. 管理者アクセス権限チェック (管理者以外は自動リダイレクト)
+  // 1. イベントリスナーおよびUI設定を即時実行 (フォーム送信時のページリロード防止)
+  initAdminView();
+  initEventListeners();
+
+  // 2. 管理者アクセス権限チェック (管理者以外は自動リダイレクト)
   currentUser = await checkPageAccess([ROLES.ADMIN]);
   if (!currentUser) return; // 権限がない場合はリダイレクト処理が行われる
 
-  // 2. ヘッダー描画
+  // 3. ヘッダー描画およびデータロード
   renderAuthHeaderWidget('header-user-widget');
-
-  // 3. UIの初期設定
-  initAdminView();
-  initEventListeners();
   await loadDashboardData();
 }
 
@@ -43,8 +46,14 @@ function initAdminView() {
 
   window.switchAdminTab = switchAdminTab;
 
-  window.addEventListener('storage', updateStats);
-  window.addEventListener('focus', updateStats);
+  window.addEventListener('storage', async () => {
+    await updateStats();
+    await renderInviteCodesTable();
+  });
+  window.addEventListener('focus', async () => {
+    await updateStats();
+    await renderInviteCodesTable();
+  });
 
   // 定期自動更新 (2秒ごとに最新受付人数を集計・同期)
   setInterval(updateStats, 2000);
@@ -58,21 +67,59 @@ export function switchAdminTab(tabName) {
     const panel = document.getElementById(`admin-panel-${t}`);
     
     if (t === tabName) {
-      if (btn) btn.className = 'px-5 py-2.5 rounded-xl text-xs font-bold transition-all bg-amber-500 text-slate-950 shadow-md flex items-center gap-2 shrink-0';
+      if (btn) btn.className = 'px-5 py-2.5 rounded-xl text-xs font-bold transition-all bg-indigo-600 text-white shadow-md flex items-center gap-2 shrink-0';
       if (panel) panel.classList.remove('hidden');
     } else {
-      if (btn) btn.className = 'px-5 py-2.5 rounded-xl text-xs font-bold transition-all text-slate-400 hover:text-slate-200 flex items-center gap-2 shrink-0';
+      if (btn) btn.className = 'px-5 py-2.5 rounded-xl text-xs font-bold transition-all text-slate-600 hover:text-slate-900 hover:bg-slate-50 flex items-center gap-2 shrink-0';
       if (panel) panel.classList.add('hidden');
     }
   });
 }
 
+// グローバルおよびイベントハンドラ定義
+export async function handleGenerateInviteClick(e) {
+  if (e) e.preventDefault();
+  try {
+    const roleEl = document.getElementById('invite-role');
+    const noteEl = document.getElementById('invite-note');
+    const role = roleEl ? roleEl.value : '運営';
+    const note = noteEl ? noteEl.value : '';
+
+    const res = await generateInviteCode(role, note);
+    if (res.success) {
+      showToast(`役職【${role}】の招待コード「${res.invite.code}」を発行しました！`, 'success');
+      addLog(`招待コード発行: ${res.invite.code} (役職: ${role} / メモ: ${note || 'なし'})`);
+      const generateInviteForm = document.getElementById('admin-generate-invite-form');
+      if (generateInviteForm) generateInviteForm.reset();
+      await renderInviteCodesTable();
+    } else {
+      showToast(res.message || '招待コード発行エラー', 'error');
+    }
+  } catch (err) {
+    console.error('招待コード発行例外:', err);
+    showToast('エラーが発生しました', 'error');
+  }
+}
+window.handleGenerateInviteClick = handleGenerateInviteClick;
+
 // イベントリスナー
 function initEventListeners() {
-  // アカウント更新ボタン
-  document.getElementById('btn-refresh-accounts')?.addEventListener('click', () => {
-    renderAccountsTable();
-    showToast('アカウント情報を再読み込みしました', 'info');
+  // 招待コード発行フォーム & ボタン
+  const generateInviteForm = document.getElementById('admin-generate-invite-form');
+  if (generateInviteForm) {
+    generateInviteForm.addEventListener('submit', handleGenerateInviteClick);
+  }
+
+  const generateInviteBtn = document.getElementById('btn-generate-invite-submit');
+  if (generateInviteBtn) {
+    generateInviteBtn.addEventListener('click', handleGenerateInviteClick);
+  }
+
+  // アカウント・招待コード更新ボタン
+  document.getElementById('btn-refresh-accounts')?.addEventListener('click', async () => {
+    await renderInviteCodesTable();
+    await renderAccountsTable();
+    showToast('アカウントおよび招待コード情報を再読み込みしました', 'info');
   });
 
   // 新規スタッフ追加フォーム
@@ -143,12 +190,84 @@ function initEventListeners() {
 
 // データ読み込み
 async function loadDashboardData() {
+  await renderInviteCodesTable();
   await renderAccountsTable();
   await updateStats();
   renderLogs();
 }
 
-// アカウント一覧テーブル描画
+// 招待コード一覧テーブル描画
+async function renderInviteCodesTable() {
+  const tbody = document.getElementById('admin-invite-codes-table-body');
+  const countBadge = document.getElementById('invite-code-count-badge');
+  if (!tbody) return;
+
+  const inviteCodes = await getInviteCodes();
+  if (countBadge) countBadge.textContent = `${inviteCodes.length}件`;
+
+  if (!inviteCodes || inviteCodes.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6" class="py-4 text-center text-slate-500 font-bold">発行済みの招待コードはありません</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = inviteCodes.map(inv => {
+    const statusBadge = inv.is_used 
+      ? `<span class="px-2 py-0.5 rounded text-[0.65rem] font-bold bg-slate-100 text-slate-600 border border-slate-200">使用済 (${escapeHtml(inv.used_by || '')})</span>`
+      : `<span class="px-2 py-0.5 rounded text-[0.65rem] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 animate-pulse">未使用 (登録可能)</span>`;
+
+    const dateStr = inv.created_at ? new Date(inv.created_at).toLocaleDateString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '-';
+
+    return `
+      <tr class="hover:bg-indigo-50/50 transition border-b border-slate-100">
+        <td class="py-3 px-4 font-mono font-bold text-indigo-600 text-sm select-all">
+          ${escapeHtml(inv.code)}
+        </td>
+        <td class="py-3 px-4">${getRoleBadgeHtml(inv.role)}</td>
+        <td class="py-3 px-4 text-slate-600 text-xs">${escapeHtml(inv.note || '-')}</td>
+        <td class="py-3 px-4 text-slate-500 text-[0.7rem] font-mono">
+          ${dateStr} <br><span class="text-slate-400">by ${escapeHtml(inv.created_by || 'admin')}</span>
+        </td>
+        <td class="py-3 px-4">${statusBadge}</td>
+        <td class="py-3 px-4 text-right flex items-center justify-end gap-1.5 pt-3">
+          <button data-code="${escapeHtml(inv.code)}" class="btn-copy-invite-code px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg transition text-xs font-bold flex items-center gap-1" title="コードをコピー">
+            <i class="fa-solid fa-copy"></i> コピー
+          </button>
+          <button data-code="${escapeHtml(inv.code)}" class="btn-delete-invite-code px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg transition text-xs font-bold" title="招待コードを削除">
+            <i class="fa-solid fa-trash"></i> 削除
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  // コピーボタンイベント
+  tbody.querySelectorAll('.btn-copy-invite-code').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const code = e.currentTarget.getAttribute('data-code');
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(code);
+        showToast(`招待コード「${code}」をコピーしました`, 'success');
+      } else {
+        showToast(`招待コード: ${code}`, 'info');
+      }
+    });
+  });
+
+  // 削除ボタンイベント
+  tbody.querySelectorAll('.btn-delete-invite-code').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      const code = e.currentTarget.getAttribute('data-code');
+      if (confirm(`招待コード 「${code}」 を無効化・削除しますか？`)) {
+        await deleteInviteCode(code);
+        showToast(`招待コード 「${code}」 を削除しました`, 'info');
+        addLog(`招待コード削除: ${code}`);
+        await renderInviteCodesTable();
+      }
+    });
+  });
+}
+
+// アカウント一覧テーブル描画 (閲覧専用)
 async function renderAccountsTable() {
   const tbody = document.getElementById('admin-accounts-table-body');
   if (!tbody) return;
@@ -156,77 +275,29 @@ async function renderAccountsTable() {
   const accounts = await getAccounts();
 
   if (!accounts || accounts.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-500 font-bold">アカウントが登録されていません</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-400 font-bold">アカウントが登録されていません</td></tr>`;
     return;
   }
 
   tbody.innerHTML = accounts.map(acc => {
-    const isSelf = currentUser && currentUser.username === acc.username;
+    const isSelf = currentUser && (currentUser.username === acc.username || currentUser.email === acc.email);
+    const dateStr = acc.createdAt || '-';
 
     return `
-      <tr class="hover:bg-slate-800/40 transition">
-        <td class="py-3 px-4 font-mono font-bold text-slate-200">
-          ${escapeHtml(acc.username)}
-          ${isSelf ? '<span class="ml-1 text-[0.65rem] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-normal">ログイン中(自分)</span>' : ''}
+      <tr class="hover:bg-indigo-50/50 transition border-b border-slate-100">
+        <td class="py-3 px-4 font-mono font-bold text-slate-800">
+          ${escapeHtml(acc.username || acc.email)}
+          ${isSelf ? '<span class="ml-1 text-[0.65rem] px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 font-bold border border-indigo-200">ログイン中(自分)</span>' : ''}
         </td>
-        <td class="py-3 px-4 font-medium text-slate-100">${escapeHtml(acc.name || acc.username)}</td>
+        <td class="py-3 px-4 font-bold text-slate-900">${escapeHtml(acc.name || acc.username || acc.email)}</td>
         <td class="py-3 px-4">${getRoleBadgeHtml(acc.role)}</td>
-        <td class="py-3 px-4">
-          <select data-username="${escapeHtml(acc.username)}" 
-                  class="admin-role-select bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-200 focus:outline-none focus:ring-1 focus:ring-amber-500">
-            <option value="運営" ${acc.role === ROLES.UNEI ? 'selected' : ''}>運営</option>
-            <option value="開票担当者" ${acc.role === ROLES.KAIHYO ? 'selected' : ''}>開票担当者</option>
-            <option value="管理者" ${acc.role === ROLES.ADMIN ? 'selected' : ''}>管理者</option>
-          </select>
-        </td>
+        <td class="py-3 px-4 text-slate-500 font-mono text-xs">${escapeHtml(dateStr)}</td>
         <td class="py-3 px-4 text-right">
-          ${isSelf ? `
-            <span class="text-xs text-slate-500 italic font-bold">削除不可</span>
-          ` : `
-            <button data-username="${escapeHtml(acc.username)}" class="btn-admin-delete-account px-2.5 py-1 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-lg transition text-xs font-bold">
-              <i class="fa-solid fa-trash"></i> 削除
-            </button>
-          `}
+          <span class="px-2 py-0.5 rounded text-[0.65rem] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">登録済み</span>
         </td>
       </tr>
     `;
   }).join('');
-
-  // 役職変更イベントリスナー
-  tbody.querySelectorAll('.admin-role-select').forEach(select => {
-    select.addEventListener('change', async (e) => {
-      const username = e.target.getAttribute('data-username');
-      const newRole = e.target.value;
-      const res = await updateAccountRole(username, newRole);
-      if (res.success) {
-        showToast(`ユーザー ${username} の役職を【${newRole}】に変更しました`, 'success');
-        addLog(`役職変更: ユーザー ${username} -> ${newRole}`);
-        await renderAccountsTable();
-        await updateStats();
-        renderAuthHeaderWidget('header-user-widget');
-      } else {
-        showToast(res.message, 'error');
-      }
-    });
-  });
-
-  // アカウント削除イベントリスナー
-  tbody.querySelectorAll('.btn-admin-delete-account').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
-      const username = e.currentTarget.getAttribute('data-username');
-      if (confirm(`本当にアカウント 「${username}」 を削除しますか？`)) {
-        const res = await deleteAccount(username);
-        if (res.success) {
-          showToast(`アカウント ${username} を削除しました`, 'info');
-          addLog(`アカウント削除: ${username}`);
-          await renderAccountsTable();
-          await updateStats();
-        } else {
-          showToast(res.message, 'error');
-        }
-      }
-    });
-  });
 }
 
 // システム統計更新

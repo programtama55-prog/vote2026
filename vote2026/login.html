@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ja" class="h-full bg-slate-900 text-slate-100">
+<html lang="ja" class="h-full bg-slate-50">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -23,9 +23,9 @@
                 extend: {
                     colors: {
                         dash: {
-                            bg: '#0f172a',
-                            card: '#1e293b',
-                            accent: '#6366f1'
+                            bg: '#f8fafc',
+                            card: '#ffffff',
+                            accent: '#4f46e5'
                         }
                     },
                     fontFamily: {
@@ -50,7 +50,7 @@
     <style>
         body {
             font-family: 'Noto Sans JP', 'Inter', sans-serif;
-            background-color: #0f172a;
+            background-color: #f8fafc;
         }
     </style>
 
@@ -68,32 +68,32 @@
         }
     </script>
 </head>
-<body class="min-h-full flex flex-col text-slate-200 antialiased bg-slate-900 relative selection:bg-indigo-500 selection:text-white">
+<body class="min-h-full flex flex-col text-slate-800 antialiased bg-slate-50 relative selection:bg-indigo-500 selection:text-white">
 
     <!-- Toast Notification Container -->
-    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+    <div id="toast-container" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none flex flex-col items-center gap-2 max-w-sm w-full px-4"></div>
 
     <!-- Header Navigation -->
-    <header class="sticky top-0 z-30 bg-slate-800/90 border-b border-slate-700/60 backdrop-blur-md">
+    <header class="sticky top-0 z-30 bg-white border-b-2 border-slate-200 shadow-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
             <div class="flex items-center gap-3">
-                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xl shadow-lg shadow-indigo-500/20">
+                <div class="w-12 h-12 rounded-xl bg-indigo-600 flex items-center justify-center text-white text-xl shadow-md">
                     <i class="fa-solid fa-user-shield"></i>
                 </div>
                 <div>
-                    <h1 class="text-xl font-bold tracking-wider text-white flex items-center gap-2">
-                        こども選挙 <span class="text-xs px-2.5 py-1 rounded-full bg-slate-700 text-indigo-300 font-semibold border border-slate-600">スタッフポータル</span>
+                    <h1 class="text-xl font-bold tracking-wider text-slate-900 flex items-center gap-2">
+                        こども選挙 <span class="text-xs px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 font-semibold border border-slate-300">スタッフポータル</span>
                     </h1>
-                    <p class="text-xs text-slate-400 font-medium">役職認証・権限管理システム</p>
+                    <p class="text-xs text-slate-500 font-bold">役職認証・権限管理システム</p>
                 </div>
             </div>
 
             <div class="flex items-center gap-2.5">
-                <button type="button" id="btn-open-supabase-config" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition flex items-center gap-2" title="Supabase接続設定">
-                    <i class="fa-solid fa-database text-indigo-400"></i>
+                <button type="button" id="btn-open-supabase-config" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 shadow-sm transition flex items-center gap-2" title="Supabase接続設定">
+                    <i class="fa-solid fa-database text-indigo-600"></i>
                     <span class="hidden sm:inline">DB接続設定</span>
                 </button>
-                <a href="./index.html" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-700/60 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-600/60 transition flex items-center gap-2">
+                <a href="./index.html" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-md transition flex items-center gap-2">
                     <i class="fa-solid fa-house"></i>
                     <span>一般ポータル</span>
                 </a>
@@ -106,31 +106,31 @@
     <main class="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
 
         <!-- 警報・リダイレクト通知メッセージ -->
-        <div id="redirect-alert" class="hidden p-4 rounded-2xl border bg-amber-500/10 border-amber-500/30 text-amber-300 flex items-start gap-3">
-            <i class="fa-solid fa-triangle-exclamation text-xl shrink-0 mt-0.5"></i>
+        <div id="redirect-alert" class="hidden p-4 rounded-2xl border bg-amber-50 border-amber-200 text-amber-800 flex items-start gap-3 shadow-sm">
+            <i class="fa-solid fa-triangle-exclamation text-xl shrink-0 mt-0.5 text-amber-600"></i>
             <div>
                 <h3 class="font-bold text-sm" id="alert-title">アクセス制限</h3>
-                <p class="text-xs text-amber-200/80 mt-1" id="alert-message">この機能を利用するには適切な役職でログインする必要があります。</p>
+                <p class="text-xs text-amber-700 mt-1" id="alert-message">この機能を利用するには適切な役職でログインする必要があります。</p>
             </div>
         </div>
 
         <!-- ログイン中の場合の上部ステータス表示 -->
-        <div id="current-session-banner" class="hidden p-6 rounded-3xl bg-slate-800/80 border border-slate-700/80 shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div id="current-session-banner" class="hidden p-6 rounded-2xl bg-white border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div class="flex items-center gap-4">
-                <div class="w-14 h-14 rounded-2xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center text-2xl">
+                <div class="w-14 h-14 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-100 flex items-center justify-center text-2xl">
                     <i class="fa-solid fa-circle-user"></i>
                 </div>
                 <div>
                     <div class="text-xs text-slate-400 font-bold uppercase tracking-wider">現在ログイン中のアカウント</div>
-                    <div class="text-lg font-bold text-white flex items-center gap-2 mt-0.5">
+                    <div class="text-lg font-bold text-slate-900 flex items-center gap-2 mt-0.5">
                         <span id="session-user-name">---</span>
                         <span id="session-user-role-badge">---</span>
                     </div>
-                    <p class="text-xs text-slate-400 mt-1">ID: <span id="session-username" class="font-mono text-slate-300">---</span></p>
+                    <p class="text-xs text-slate-500 mt-1">ID: <span id="session-username" class="font-mono text-slate-700">---</span></p>
                 </div>
             </div>
             <div class="flex items-center gap-2">
-                <button id="btn-session-logout" class="px-4 py-2.5 rounded-xl text-xs font-bold bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 transition flex items-center gap-2">
+                <button id="btn-session-logout" class="px-4 py-2.5 rounded-xl text-xs font-bold bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 transition flex items-center gap-2">
                     <i class="fa-solid fa-right-from-bracket"></i> ログアウト
                 </button>
             </div>
@@ -140,50 +140,46 @@
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             
             <!-- AuthCore ログインシステム パネル (React コンポーネント) -->
-            <div class="lg:col-span-6 relative overflow-hidden rounded-2xl">
-                <!-- 背景のグローエフェクト -->
-                <div class="absolute -top-20 -left-20 w-64 h-64 bg-indigo-600/20 rounded-full blur-3xl pointer-events-none"></div>
-                <div class="absolute -bottom-20 -right-20 w-64 h-64 bg-purple-600/20 rounded-full blur-3xl pointer-events-none"></div>
-
+            <div class="lg:col-span-6 relative">
                 <div id="auth-panel-root"></div>
             </div>
 
             <!-- Supabase データベース接続ステータス -->
             <div class="lg:col-span-6 space-y-4">
-                <div class="bg-slate-800/80 border border-slate-700/80 rounded-3xl p-6 shadow-xl space-y-5">
-                    <div class="flex items-center justify-between border-b border-slate-700/80 pb-4">
-                        <h2 class="text-sm font-bold text-white flex items-center gap-2">
-                            <i class="fa-solid fa-database text-emerald-400"></i> Supabase 本番DB接続ステータス
+                <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-5">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+                        <h2 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                            <i class="fa-solid fa-database text-emerald-600"></i> Supabase 本番DB接続ステータス
                         </h2>
-                        <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5">
-                            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                             接続有効
                         </span>
                     </div>
 
-                    <p class="text-xs text-slate-300 leading-relaxed">
+                    <p class="text-xs text-slate-600 leading-relaxed">
                         本システムは Supabase Auth および PostgreSQL データベースに直接接続して認証・権限管理を行っています。
                     </p>
 
-                    <div class="space-y-3 bg-slate-900/80 p-4 rounded-2xl border border-slate-700/60 font-mono text-xs">
+                    <div class="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200 font-mono text-xs">
                         <div>
                             <div class="text-[0.65rem] text-slate-400 font-bold uppercase tracking-wider mb-1">プロジェクト URL (.env)</div>
-                            <div class="text-indigo-300 font-semibold truncate" id="display-supabase-url">https://yuxvrgkmjorzcgrtjmoz.supabase.co</div>
+                            <div class="text-indigo-600 font-semibold truncate" id="display-supabase-url">https://yuxvrgkmjorzcgrtjmoz.supabase.co</div>
                         </div>
-                        <div class="pt-2 border-t border-slate-800">
+                        <div class="pt-2 border-t border-slate-200">
                             <div class="text-[0.65rem] text-slate-400 font-bold uppercase tracking-wider mb-1">認証方式</div>
-                            <div class="text-emerald-400 font-semibold flex items-center gap-2">
+                            <div class="text-emerald-600 font-semibold flex items-center gap-2">
                                 <i class="fa-solid fa-lock"></i> Supabase Auth (JWT + RLS 認可)
                             </div>
                         </div>
                     </div>
 
-                    <div class="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-200/90 space-y-2">
-                        <div class="font-bold flex items-center gap-1.5 text-amber-300">
+                    <div class="p-4 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 space-y-2">
+                        <div class="font-bold flex items-center gap-1.5 text-amber-800">
                             <i class="fa-solid fa-shield"></i> 管理者パネルへのアクセス権限
                         </div>
-                        <p class="text-[0.75rem] leading-relaxed">
-                            役割「<strong class="text-amber-300">管理者</strong>」でログインまたは新規登録した場合のみ、<strong>管理者パネル (admin.html)</strong> へのアクセスおよびボタンが表示されます。<br>
+                        <p class="text-[0.75rem] leading-relaxed text-amber-800/90">
+                            役割「<strong class="text-amber-900">管理者</strong>」でログインまたは新規登録した場合のみ、<strong>管理者パネル (admin.html)</strong> へのアクセスおよびボタンが表示されます。<br>
                             運営・開票担当者アカウントでログインした場合はそれぞれの担当画面へ移動します。
                         </p>
                     </div>
@@ -193,43 +189,43 @@
     </main>
 
     <!-- Footer -->
-    <footer class="bg-slate-900 border-t border-slate-800 py-6 mt-12 text-center text-xs text-slate-500">
+    <footer class="bg-white border-t border-slate-200 py-6 mt-12 text-center text-xs font-bold text-slate-400">
         <div class="max-w-7xl mx-auto px-4">
             <p>こども選挙 システム運営事務局 &copy; 2026 - 役割ベースアクセス制御 (RBAC) 認証基盤</p>
         </div>
     </footer>
 
     <!-- Supabase 接続設定モーダル -->
-    <div id="supabase-config-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
-        <div class="bg-slate-900 border border-slate-700 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-6">
-            <div class="flex items-center justify-between border-b border-slate-800 pb-4">
-                <h3 class="text-base font-bold text-white flex items-center gap-2">
-                    <i class="fa-solid fa-database text-indigo-400"></i> Supabase 接続設定
+    <div id="supabase-config-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
+        <div class="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-6">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+                <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                    <i class="fa-solid fa-database text-indigo-600"></i> Supabase 接続設定
                 </h3>
-                <button type="button" id="btn-close-supabase-config" class="text-slate-400 hover:text-white transition text-lg">
+                <button type="button" id="btn-close-supabase-config" class="text-slate-400 hover:text-slate-600 transition text-lg">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
             
-            <p class="text-xs text-slate-400 leading-relaxed">
+            <p class="text-xs text-slate-500 leading-relaxed">
                 Supabase プロジェクトの URL と Anon Key を設定すると、本番DB認証に切り替わります。未設定時はデモ・ローカルモードで動作します。
             </p>
 
             <form id="supabase-config-form" class="space-y-4">
                 <div>
-                    <label for="cfg-supabase-url" class="block text-xs font-bold text-slate-300 mb-1.5">Supabase Project URL</label>
-                    <input type="url" id="cfg-supabase-url" placeholder="https://xxxx.supabase.co" class="w-full px-3.5 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-xs font-mono text-slate-100 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
+                    <label for="cfg-supabase-url" class="block text-xs font-bold text-slate-700 mb-1.5">Supabase Project URL</label>
+                    <input type="url" id="cfg-supabase-url" placeholder="https://xxxx.supabase.co" class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-mono text-slate-800 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
                 </div>
                 <div>
-                    <label for="cfg-supabase-key" class="block text-xs font-bold text-slate-300 mb-1.5">Supabase Anon Key</label>
-                    <input type="text" id="cfg-supabase-key" placeholder="ey..." class="w-full px-3.5 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-xs font-mono text-slate-100 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
+                    <label for="cfg-supabase-key" class="block text-xs font-bold text-slate-700 mb-1.5">Supabase Anon Key</label>
+                    <input type="text" id="cfg-supabase-key" placeholder="ey..." class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-mono text-slate-800 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
                 </div>
 
                 <div class="flex items-center justify-between pt-2">
-                    <button type="button" id="btn-clear-supabase-config" class="px-3 py-2 rounded-xl text-xs font-bold bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 transition">
+                    <button type="button" id="btn-clear-supabase-config" class="px-3 py-2 rounded-xl text-xs font-bold bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition">
                         設定クリア (デモに戻す)
                     </button>
-                    <button type="submit" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-indigo-600/30 transition flex items-center gap-2">
+                    <button type="submit" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black rounded-xl shadow-md transition flex items-center gap-2">
                         <i class="fa-solid fa-floppy-disk"></i> 保存して適用
                     </button>
                 </div>
@@ -310,21 +306,19 @@
       const Briefcase = ({ className = "w-4 h-4" }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>;
       const Trash2 = ({ className = "w-4 h-4" }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>;
 
-      // EXACT REACT LOGIN SYSTEM COMPONENT
+      // REACT LOGIN SYSTEM COMPONENT
       function AuthCorePanel() {
         const [view, setView] = useState(() => (loadSavedCurrentUser() ? 'dashboard' : 'login'));
         const [users, setUsers] = useState(loadSavedUsers);
         const [currentUser, setCurrentUser] = useState(loadSavedCurrentUser);
         const [toast, setToast] = useState(null);
 
-        // ユーザーリスト変更時に localStorage へ保存
         useEffect(() => {
           try {
             localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
           } catch (e) {}
         }, [users]);
 
-        // ログインユーザー変更時に localStorage へ保存
         useEffect(() => {
           try {
             if (currentUser) {
@@ -352,7 +346,6 @@
           }, 4000);
         };
 
-        // ログイン処理
         const handleLogin = ({ email, password }) => {
           const targetUser = users.find(u => u.email.toLowerCase() === email.toLowerCase());
 
@@ -370,7 +363,6 @@
           setView('dashboard');
           showToast(`${targetUser.name} さん、お帰りなさい！`, 'success');
 
-          // Redirect based on role if needed
           setTimeout(() => {
             const role = targetUser.role || '運営';
             if (role === '管理者') window.location.href = './admin.html';
@@ -380,12 +372,43 @@
           return true;
         };
 
-        // 新規登録処理（役割選択対応）
-        const handleRegister = ({ name, email, password, role }) => {
+        const handleRegister = ({ name, email, password, inviteCode }) => {
           const isExist = users.some(u => u.email.toLowerCase() === email.toLowerCase());
           if (isExist) {
             showToast('このメールアドレスは既に登録されています', 'error');
             return false;
+          }
+
+          const cleanCode = (inviteCode || '').trim().toUpperCase();
+          if (!cleanCode) {
+            showToast('招待コードを入力してください', 'error');
+            return false;
+          }
+
+          let assignedRole = '運営';
+          try {
+            const rawCodes = localStorage.getItem('kodomo_senkyo_invite_codes');
+            const inviteCodes = rawCodes ? JSON.parse(rawCodes) : [];
+            const found = inviteCodes.find(c => c.code && c.code.toUpperCase() === cleanCode);
+
+            if (!found) {
+              showToast('入力された招待コードは存在しません', 'error');
+              return false;
+            }
+
+            if (found.is_used) {
+              showToast('この招待コードは既に使用されています', 'error');
+              return false;
+            }
+
+            assignedRole = found.role || '運営';
+
+            found.is_used = true;
+            found.used_by = name || email;
+            found.used_at = new Date().toISOString();
+            localStorage.setItem('kodomo_senkyo_invite_codes', JSON.stringify(inviteCodes));
+          } catch (e) {
+            console.warn('招待コード照合エラー:', e);
           }
 
           const newUser = {
@@ -393,14 +416,42 @@
             name,
             email,
             password,
-            role: role || '運営',
+            role: assignedRole,
             createdAt: new Date().toISOString().split('T')[0]
           };
 
           setUsers(prev => [...prev, newUser]);
           setCurrentUser(newUser);
+
+          try {
+            const rawLocal = localStorage.getItem('kodomo_senkyo_local_accounts') || '[]';
+            const localAccs = JSON.parse(rawLocal);
+            const username = email.includes('@') ? email.split('@')[0] : email;
+            
+            const idx = localAccs.findIndex(a => (a.username && a.username.toLowerCase() === username.toLowerCase()) || (a.email && a.email.toLowerCase() === email.toLowerCase()));
+            const localAcc = {
+              id: newUser.id,
+              username: username,
+              name: name,
+              role: assignedRole,
+              email: email,
+              password: password,
+              createdAt: newUser.createdAt
+            };
+
+            if (idx >= 0) {
+              localAccs[idx] = localAcc;
+            } else {
+              localAccs.push(localAcc);
+            }
+            localStorage.setItem('kodomo_senkyo_local_accounts', JSON.stringify(localAccs));
+            window.dispatchEvent(new Event('storage'));
+          } catch (e) {
+            console.warn('ローカルアカウント追加エラー:', e);
+          }
+
           setView('dashboard');
-          showToast(`アカウント登録が完了しました！（役職: ${newUser.role}）`, 'success');
+          showToast(`招待コード認証完了！役職【${newUser.role}】でアカウント登録しました`, 'success');
 
           setTimeout(() => {
             if (newUser.role === '管理者') window.location.href = './admin.html';
@@ -411,28 +462,24 @@
           return true;
         };
 
-        // ログアウト処理
         const handleLogout = () => {
           setCurrentUser(null);
           setView('login');
           showToast('ログアウトしました', 'info');
         };
 
-        // アカウント削除処理 (退会)
         const handleDeleteAccount = () => {
           if (!currentUser) return;
           if (confirm(`本当にアカウント 「${currentUser.name} (${currentUser.email})」 を完全に削除しますか？\n\n※削除するとこのアカウントでのログインは行えなくなります。`)) {
             const targetEmail = currentUser.email.toLowerCase();
             const targetId = currentUser.id;
 
-            // 1. React AuthPanel ユーザーリストから除外
             const updatedUsers = users.filter(u => u.email.toLowerCase() !== targetEmail && u.id !== targetId);
             setUsers(updatedUsers);
             try {
               localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(updatedUsers));
             } catch (e) {}
 
-            // 2. kodomo_senkyo_local_accounts からも除外
             try {
               const rawLocal = localStorage.getItem('kodomo_senkyo_local_accounts') || '[]';
               const localAccs = JSON.parse(rawLocal);
@@ -444,7 +491,6 @@
               localStorage.setItem('kodomo_senkyo_local_accounts', JSON.stringify(filteredLocal));
             } catch (e) {}
 
-            // 3. ログインセッション削除
             setCurrentUser(null);
             setView('login');
             showToast('アカウントを完全に削除（退会）しました', 'info');
@@ -452,28 +498,27 @@
         };
 
         return (
-          <div className="relative font-sans text-slate-100">
+          <div className="relative font-sans text-slate-800">
             {/* トースト通知 */}
             {toast && (
-              <div className="fixed top-5 right-5 z-50 animate-bounce transition-all duration-300">
-                <div className={`flex items-center gap-3 px-4 py-3 rounded-xl shadow-2xl backdrop-blur-md border ${
+              <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-bounce transition-all duration-300">
+                <div className={`flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-xl border font-bold text-xs ${
                   toast.type === 'error' 
-                    ? 'bg-rose-950/80 border-rose-600/50 text-rose-200' 
+                    ? 'bg-rose-600 text-white border-rose-500' 
                     : toast.type === 'info'
-                    ? 'bg-slate-900/80 border-slate-700 text-slate-200'
-                    : 'bg-emerald-950/80 border-emerald-500/50 text-emerald-200'
+                    ? 'bg-slate-800 text-white border-slate-700'
+                    : 'bg-emerald-600 text-white border-emerald-500'
                 }`}>
                   {toast.type === 'error' ? (
-                    <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />
+                    <AlertCircle className="w-5 h-5 text-white shrink-0" />
                   ) : (
-                    <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+                    <CheckCircle2 className="w-5 h-5 text-white shrink-0" />
                   )}
-                  <span className="text-sm font-medium">{toast.message}</span>
+                  <span>{toast.message}</span>
                 </div>
               </div>
             )}
 
-            {/* パネルコンテンツ */}
             <div>
               {view === 'login' && (
                 <LoginForm 
@@ -509,7 +554,7 @@
         );
       }
 
-      // 1. ログインフォーム
+      // 1. ログインフォーム (Light Style)
       function LoginForm({ onLogin, onSwitchToRegister, onSwitchToForgot }) {
         const [email, setEmail] = useState('');
         const [password, setPassword] = useState('');
@@ -534,39 +579,39 @@
         };
 
         return (
-          <div className="bg-slate-900/90 border border-slate-800 p-8 rounded-2xl shadow-xl shadow-black/40 backdrop-blur-xl">
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold text-white tracking-tight">ログイン</h2>
-              <p className="text-sm text-slate-400 mt-1">
+          <div className="bg-white border border-slate-200 p-6 sm:p-8 rounded-2xl shadow-sm text-slate-800 space-y-6">
+            <div>
+              <h2 className="text-2xl font-black text-slate-900 tracking-tight">ログイン</h2>
+              <p className="text-xs text-slate-500 font-bold mt-1">
                 登録済みの認証情報でアカウントにサインインしてください
               </p>
             </div>
 
             {/* デモ用クイックログインボタン */}
-            <div className="mb-5 p-3.5 rounded-xl bg-indigo-950/60 border border-indigo-800/60 space-y-2">
-              <div className="text-xs font-bold text-indigo-300 flex items-center justify-between">
+            <div className="p-4 rounded-xl bg-indigo-50/70 border border-indigo-100 space-y-2.5">
+              <div className="text-xs font-bold text-indigo-900 flex items-center justify-between">
                 <span>⚡ 役職別ワンタップ・自動入力</span>
-                <span className="text-[10px] text-indigo-400 font-mono">パスワード: Password123!</span>
+                <span className="text-[10px] text-indigo-600 font-mono">パスワード: Password123!</span>
               </div>
-              <div className="grid grid-cols-3 gap-1.5 text-xs font-bold">
+              <div className="grid grid-cols-3 gap-2 text-xs font-bold">
                 <button
                   type="button"
                   onClick={() => fillDemoAccount('unei@example.com')}
-                  className="py-1.5 px-2 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-500/40 text-[11px] transition text-center"
+                  className="py-2 px-2.5 rounded-xl bg-white hover:bg-sky-50 text-sky-700 border border-sky-200 text-xs font-bold transition text-center shadow-xs"
                 >
                   💳 運営 (受付)
                 </button>
                 <button
                   type="button"
                   onClick={() => fillDemoAccount('kaihyo@example.com')}
-                  className="py-1.5 px-2 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-[11px] transition text-center"
+                  className="py-2 px-2.5 rounded-xl bg-white hover:bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold transition text-center shadow-xs"
                 >
                   📊 開票担当
                 </button>
                 <button
                   type="button"
                   onClick={() => fillDemoAccount('demo@example.com')}
-                  className="py-1.5 px-2 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-[11px] transition text-center"
+                  className="py-2 px-2.5 rounded-xl bg-white hover:bg-amber-50 text-amber-700 border border-amber-200 text-xs font-bold transition text-center shadow-xs"
                 >
                   🛡️ 管理者
                 </button>
@@ -575,49 +620,49 @@
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
                   メールアドレス
                 </label>
                 <div className="relative">
-                  <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
                     type="email"
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="name@example.com"
-                    className="w-full bg-slate-950/60 border border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                    className="w-full bg-white border border-slate-300 rounded-xl pl-10 pr-4 py-3 text-sm font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
                   />
                 </div>
               </div>
 
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-semibold text-slate-300">
+                  <label className="block text-xs font-bold text-slate-700">
                     パスワード
                   </label>
                   <button
                     type="button"
                     onClick={onSwitchToForgot}
-                    className="text-xs text-indigo-400 hover:text-indigo-300 transition"
+                    className="text-xs font-bold text-indigo-600 hover:text-indigo-700 transition"
                   >
                     パスワードをお忘れですか？
                   </button>
                 </div>
                 <div className="relative">
-                  <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full bg-slate-950/60 border border-slate-700 rounded-xl pl-10 pr-10 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                    className="w-full bg-white border border-slate-300 rounded-xl pl-10 pr-10 py-3 text-sm font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -630,16 +675,16 @@
                     type="checkbox"
                     checked={rememberMe}
                     onChange={(e) => setRememberMe(e.target.checked)}
-                    className="w-4 h-4 rounded border-slate-700 bg-slate-950 text-indigo-600 focus:ring-indigo-500 focus:ring-offset-slate-900"
+                    className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
                   />
-                  <span className="text-xs text-slate-400">ログイン状態を保持する</span>
+                  <span className="text-xs font-bold text-slate-600">ログイン状態を保持する</span>
                 </label>
               </div>
 
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full mt-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-medium py-2.5 rounded-xl shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 transition active:scale-[0.99] disabled:opacity-50"
+                className="w-full mt-2 bg-indigo-600 hover:bg-indigo-700 text-white font-black py-3.5 rounded-xl shadow-md flex items-center justify-center gap-2 transition active:scale-[0.99] disabled:opacity-50"
               >
                 {loading ? (
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -652,13 +697,13 @@
               </button>
             </form>
 
-            <div className="mt-6 pt-6 border-t border-slate-800 text-center">
-              <p className="text-xs text-slate-400">
+            <div className="mt-6 pt-6 border-t border-slate-100 text-center">
+              <p className="text-xs font-bold text-slate-500">
                 まだアカウントをお持ちではありませんか？{' '}
                 <button
                   type="button"
                   onClick={onSwitchToRegister}
-                  className="text-indigo-400 hover:text-indigo-300 font-semibold transition ml-1"
+                  className="text-indigo-600 hover:text-indigo-700 font-bold transition ml-1"
                 >
                   新規登録する
                 </button>
@@ -668,18 +713,17 @@
         );
       }
 
-      // 2. アカウント新規登録フォーム（役割選択ドロップダウン付き）
+      // 2. アカウント新規登録フォーム (Light Style)
       function RegisterForm({ onRegister, onSwitchToLogin }) {
         const [name, setName] = useState('');
         const [email, setEmail] = useState('');
         const [password, setPassword] = useState('');
         const [confirmPassword, setConfirmPassword] = useState('');
-        const [role, setRole] = useState('運営');
+        const [inviteCode, setInviteCode] = useState('');
         const [showPassword, setShowPassword] = useState(false);
         const [agreeTerms, setAgreeTerms] = useState(false);
         const [loading, setLoading] = useState(false);
 
-        // パスワードの強度スコア算出 (0〜4)
         const passwordStrength = useMemo(() => {
           let score = 0;
           if (password.length >= 8) score++;
@@ -689,7 +733,6 @@
           return score;
         }, [password]);
 
-        // 入力エラー検証
         const errors = useMemo(() => {
           const errs = {};
           if (name && name.trim().length < 2) {
@@ -715,7 +758,7 @@
 
           setLoading(true);
           setTimeout(() => {
-            onRegister({ name, email, password, role });
+            onRegister({ name, email, password, inviteCode });
             setLoading(false);
           }, 500);
         };
@@ -736,110 +779,105 @@
         };
 
         return (
-          <div className="bg-slate-900/90 border border-slate-800 p-8 rounded-2xl shadow-xl shadow-black/40 backdrop-blur-xl">
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold text-white tracking-tight">アカウント登録</h2>
-              <p className="text-sm text-slate-400 mt-1">
+          <div className="bg-white border border-slate-200 p-6 sm:p-8 rounded-2xl shadow-sm text-slate-800 space-y-6">
+            <div>
+              <h2 className="text-2xl font-black text-slate-900 tracking-tight">アカウント登録</h2>
+              <p className="text-xs text-slate-500 font-bold mt-1">
                 必要情報を入力して、新しいアカウントを作成しましょう
               </p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* お名前 */}
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
                   お名前 / ユーザー名
                 </label>
                 <div className="relative">
-                  <User className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
                     required
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="山田 太郎"
-                    className={`w-full bg-slate-950/60 border rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 transition ${
-                      errors.name ? 'border-rose-500/70 focus:ring-rose-500' : 'border-slate-700 focus:ring-indigo-500 focus:border-transparent'
+                    className={`w-full bg-white border rounded-xl pl-10 pr-4 py-3 text-sm font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 transition ${
+                      errors.name ? 'border-rose-500 focus:ring-rose-500' : 'border-slate-300 focus:ring-indigo-500 focus:border-transparent'
                     }`}
                   />
                 </div>
-                {errors.name && <p className="text-xs text-rose-400 mt-1">{errors.name}</p>}
+                {errors.name && <p className="text-xs text-rose-500 font-bold mt-1">{errors.name}</p>}
               </div>
 
-              {/* メールアドレス */}
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
                   メールアドレス
                 </label>
                 <div className="relative">
-                  <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
                     type="email"
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="name@example.com"
-                    className={`w-full bg-slate-950/60 border rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 transition ${
-                      errors.email ? 'border-rose-500/70 focus:ring-rose-500' : 'border-slate-700 focus:ring-indigo-500 focus:border-transparent'
+                    className={`w-full bg-white border rounded-xl pl-10 pr-4 py-3 text-sm font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 transition ${
+                      errors.email ? 'border-rose-500 focus:ring-rose-500' : 'border-slate-300 focus:ring-indigo-500 focus:border-transparent'
                     }`}
                   />
                 </div>
-                {errors.email && <p className="text-xs text-rose-400 mt-1">{errors.email}</p>}
+                {errors.email && <p className="text-xs text-rose-500 font-bold mt-1">{errors.email}</p>}
               </div>
 
-              {/* 役割 / 役職選択 */}
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  希望する役割 (権限)
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  招待コード <span className="text-amber-600 font-normal">（管理者から発行されたコード）</span>
                 </label>
                 <div className="relative">
-                  <Briefcase className="w-4 h-4 text-indigo-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  <select
-                    value={role}
-                    onChange={(e) => setRole(e.target.value)}
-                    className="w-full bg-slate-950/60 border border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                  >
-                    <option value="運営">運営 (受付・投票操作 / ダッシュボード)</option>
-                    <option value="開票担当者">開票担当者 (票数照合・集計入力)</option>
-                    <option value="管理者">管理者 (全機能アクセス + アカウント管理)</option>
-                  </select>
+                  <KeyRound className="w-4 h-4 text-amber-600 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    required
+                    value={inviteCode}
+                    onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
+                    placeholder="INV-XXXXXX"
+                    className="w-full bg-amber-50/60 border border-amber-300 rounded-xl pl-10 pr-4 py-3 text-sm font-mono tracking-wider font-bold text-amber-900 uppercase placeholder-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition"
+                  />
                 </div>
+                <p className="text-[11px] font-bold text-slate-500 mt-1">※招待コードによりアカウントの役職（運営・開票担当者・管理者）が自動設定されます。</p>
               </div>
 
-              {/* パスワード */}
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
                   パスワード (8文字以上)
                 </label>
                 <div className="relative">
-                  <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="大文字・数字・記号の組み合わせ"
-                    className={`w-full bg-slate-950/60 border rounded-xl pl-10 pr-10 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 transition ${
-                      errors.password ? 'border-rose-500/70 focus:ring-rose-500' : 'border-slate-700 focus:ring-indigo-500 focus:border-transparent'
+                    className={`w-full bg-white border rounded-xl pl-10 pr-10 py-3 text-sm font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 transition ${
+                      errors.password ? 'border-rose-500 focus:ring-rose-500' : 'border-slate-300 focus:ring-indigo-500 focus:border-transparent'
                     }`}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
 
-                {/* 強度インジケーター */}
                 {password && (
                   <div className="mt-2">
-                    <div className="flex items-center justify-between text-[11px] mb-1">
-                      <span className="text-slate-400">強度:</span>
-                      <span className="font-semibold text-slate-300">{getStrengthLabel()}</span>
+                    <div className="flex items-center justify-between text-[11px] font-bold mb-1">
+                      <span className="text-slate-500">強度:</span>
+                      <span className="text-slate-700">{getStrengthLabel()}</span>
                     </div>
-                    <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden flex gap-1">
+                    <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden flex gap-1">
                       <div className={`h-full flex-1 rounded-full transition-all duration-300 ${passwordStrength >= 1 ? getStrengthBarColor() : 'bg-transparent'}`} />
                       <div className={`h-full flex-1 rounded-full transition-all duration-300 ${passwordStrength >= 2 ? getStrengthBarColor() : 'bg-transparent'}`} />
                       <div className={`h-full flex-1 rounded-full transition-all duration-300 ${passwordStrength >= 3 ? getStrengthBarColor() : 'bg-transparent'}`} />
@@ -847,31 +885,29 @@
                     </div>
                   </div>
                 )}
-                {errors.password && <p className="text-xs text-rose-400 mt-1">{errors.password}</p>}
+                {errors.password && <p className="text-xs text-rose-500 font-bold mt-1">{errors.password}</p>}
               </div>
 
-              {/* パスワード確認 */}
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
                   パスワード（確認用）
                 </label>
                 <div className="relative">
-                  <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     required
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="もう一度入力"
-                    className={`w-full bg-slate-950/60 border rounded-xl pl-10 pr-10 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 transition ${
-                      errors.confirmPassword ? 'border-rose-500/70 focus:ring-rose-500' : 'border-slate-700 focus:ring-indigo-500 focus:border-transparent'
+                    className={`w-full bg-white border rounded-xl pl-10 pr-10 py-3 text-sm font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 transition ${
+                      errors.confirmPassword ? 'border-rose-500 focus:ring-rose-500' : 'border-slate-300 focus:ring-indigo-500 focus:border-transparent'
                     }`}
                   />
                 </div>
-                {errors.confirmPassword && <p className="text-xs text-rose-400 mt-1">{errors.confirmPassword}</p>}
+                {errors.confirmPassword && <p className="text-xs text-rose-500 font-bold mt-1">{errors.confirmPassword}</p>}
               </div>
 
-              {/* 利用規約同意 */}
               <div className="pt-2">
                 <label className="flex items-start gap-2.5 cursor-pointer">
                   <input
@@ -879,11 +915,11 @@
                     required
                     checked={agreeTerms}
                     onChange={(e) => setAgreeTerms(e.target.checked)}
-                    className="mt-0.5 w-4 h-4 rounded border-slate-700 bg-slate-950 text-indigo-600 focus:ring-indigo-500 focus:ring-offset-slate-900"
+                    className="mt-0.5 w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
                   />
-                  <span className="text-xs text-slate-400 leading-snug">
-                    <span className="text-indigo-400 underline cursor-pointer">利用規約</span> および{' '}
-                    <span className="text-indigo-400 underline cursor-pointer">プライバシーポリシー</span>
+                  <span className="text-xs font-bold text-slate-600 leading-snug">
+                    <span className="text-indigo-600 underline cursor-pointer">利用規約</span> および{' '}
+                    <span className="text-indigo-600 underline cursor-pointer">プライバシーポリシー</span>
                     に同意してアカウントを開設します
                   </span>
                 </label>
@@ -892,7 +928,7 @@
               <button
                 type="submit"
                 disabled={loading || !agreeTerms || Object.keys(errors).length > 0}
-                className="w-full mt-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-medium py-2.5 rounded-xl shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 transition active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full mt-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black py-3.5 rounded-xl shadow-md flex items-center justify-center gap-2 transition active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -905,13 +941,13 @@
               </button>
             </form>
 
-            <div className="mt-6 pt-6 border-t border-slate-800 text-center">
-              <p className="text-xs text-slate-400">
+            <div className="mt-6 pt-6 border-t border-slate-100 text-center">
+              <p className="text-xs font-bold text-slate-500">
                 既にアカウントをお持ちですか？{' '}
                 <button
                   type="button"
                   onClick={onSwitchToLogin}
-                  className="text-indigo-400 hover:text-indigo-300 font-semibold transition ml-1"
+                  className="text-indigo-600 hover:text-indigo-700 font-bold transition ml-1"
                 >
                   ログインはこちら
                 </button>
@@ -921,7 +957,7 @@
         );
       }
 
-      // 3. パスワード再設定フォーム
+      // 3. パスワード再設定フォーム (Light Style)
       function ForgotPasswordForm({ onBack, onSuccess }) {
         const [email, setEmail] = useState('');
         const [loading, setLoading] = useState(false);
@@ -938,39 +974,39 @@
         };
 
         return (
-          <div className="bg-slate-900/90 border border-slate-800 p-8 rounded-2xl shadow-xl shadow-black/40 backdrop-blur-xl">
+          <div className="bg-white border border-slate-200 p-6 sm:p-8 rounded-2xl shadow-sm text-slate-800 space-y-6">
             <button
               onClick={onBack}
-              className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200 mb-6 transition"
+              className="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 mb-2 transition"
             >
               <ChevronLeft className="w-4 h-4" />
               <span>ログイン画面に戻る</span>
             </button>
 
-            <div className="mb-6">
-              <div className="w-10 h-10 rounded-xl bg-indigo-950/80 border border-indigo-700/50 flex items-center justify-center text-indigo-400 mb-3">
+            <div>
+              <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 mb-3">
                 <KeyRound className="w-5 h-5" />
               </div>
-              <h2 className="text-xl font-bold text-white tracking-tight">パスワードの再設定</h2>
-              <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
+              <h2 className="text-xl font-black text-slate-900 tracking-tight">パスワードの再設定</h2>
+              <p className="text-xs font-bold text-slate-500 mt-1.5 leading-relaxed">
                 ご登録のメールアドレスを入力してください。パスワードリセット用の案内をお送りします。
               </p>
             </div>
 
             <form onSubmit={handleReset} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
                   メールアドレス
                 </label>
                 <div className="relative">
-                  <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
                     type="email"
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="name@example.com"
-                    className="w-full bg-slate-950/60 border border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                    className="w-full bg-white border border-slate-300 rounded-xl pl-10 pr-4 py-3 text-sm font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
                   />
                 </div>
               </div>
@@ -978,7 +1014,7 @@
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2.5 rounded-xl shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 transition active:scale-[0.99] disabled:opacity-50"
+                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-3.5 rounded-xl shadow-md flex items-center justify-center gap-2 transition active:scale-[0.99] disabled:opacity-50"
               >
                 {loading ? (
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -991,65 +1027,62 @@
         );
       }
 
-      // 4. ログイン後ダッシュボード
+      // 4. ログイン後ダッシュボード (Light Style)
       function DashboardView({ user, onLogout, onDeleteAccount }) {
         return (
-          <div className="bg-slate-900/90 border border-slate-800 rounded-2xl shadow-xl shadow-black/40 backdrop-blur-xl overflow-hidden">
-            {/* ユーザーヘッダーバナー */}
-            <div className="bg-gradient-to-r from-indigo-900/60 to-purple-900/60 p-6 border-b border-slate-800 flex items-center gap-4">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white text-2xl font-bold shadow-lg shadow-indigo-500/30">
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden text-slate-800">
+            <div className="bg-indigo-50/80 p-6 border-b border-indigo-100 flex items-center gap-4">
+              <div className="w-16 h-16 rounded-2xl bg-indigo-600 flex items-center justify-center text-white text-2xl font-black shadow-md">
                 {user.name.charAt(0)}
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h2 className="text-xl font-bold text-white">{user.name}</h2>
-                  <span className="bg-emerald-950 text-emerald-300 border border-emerald-500/40 text-[10px] font-semibold px-2 py-0.5 rounded-full flex items-center gap-1">
+                  <h2 className="text-xl font-bold text-slate-900">{user.name}</h2>
+                  <span className="bg-emerald-100 text-emerald-800 border border-emerald-200 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
                     <ShieldCheck className="w-3 h-3" />
                     認証済み ({user.role || '運営'})
                   </span>
                 </div>
-                <p className="text-xs text-slate-400 mt-1">{user.email}</p>
+                <p className="text-xs text-slate-500 font-bold mt-1">{user.email}</p>
               </div>
             </div>
 
-            {/* ユーザー情報詳細 */}
-            <div className="p-6 space-y-4">
-              <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            <div class="p-6 space-y-4">
+              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
                 アカウント情報
               </h3>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800">
-                  <span className="text-slate-500 block mb-1">ユーザーID</span>
-                  <span className="font-mono text-slate-200 text-[11px] truncate block">
+                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                  <span className="text-slate-400 font-bold block mb-1">ユーザーID</span>
+                  <span className="font-mono text-slate-800 font-bold text-[11px] truncate block">
                     {user.id}
                   </span>
                 </div>
-                <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-slate-500" />
+                <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-slate-400" />
                   <div>
-                    <span className="text-slate-500 block text-[11px]">登録日</span>
-                    <span className="text-slate-200 font-medium">{user.createdAt}</span>
+                    <span className="text-slate-400 font-bold block text-[11px]">登録日</span>
+                    <span className="text-slate-800 font-bold">{user.createdAt}</span>
                   </div>
                 </div>
               </div>
 
-              {/* 権限に応じたコントロールパネル案内 (管理者のみ管理者パネルを表示) */}
               {user.role === '管理者' && (
-                <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 space-y-2.5 mt-3">
+                <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 space-y-2.5 mt-3">
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-amber-300 text-xs flex items-center gap-1.5">
-                      <ShieldCheck className="w-4 h-4 text-amber-400" />
+                    <span className="font-bold text-amber-900 text-xs flex items-center gap-1.5">
+                      <ShieldCheck className="w-4 h-4 text-amber-600" />
                       管理者専用コントロールパネル
                     </span>
-                    <span className="text-[10px] px-2 py-0.5 bg-amber-500/20 text-amber-300 rounded font-mono font-bold">ADMIN ONLY</span>
+                    <span className="text-[10px] px-2 py-0.5 bg-amber-100 text-amber-800 rounded font-mono font-bold border border-amber-200">ADMIN ONLY</span>
                   </div>
-                  <p className="text-xs text-slate-300 leading-relaxed">
+                  <p className="text-xs text-slate-600 leading-relaxed font-bold">
                     スタッフのアカウント管理、権限変更、選挙ステータス制御などの管理者専用機能へアクセスできます。
                   </p>
                   <a
                     href="./admin.html"
-                    className="inline-flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs shadow-lg shadow-amber-500/20 transition"
+                    className="inline-flex items-center justify-center gap-2 w-full px-4 py-3 bg-amber-500 hover:bg-amber-600 text-white font-black rounded-xl text-xs shadow-md transition"
                   >
                     <ShieldCheck className="w-4 h-4" />
                     管理者パネルを開く (admin.html)
@@ -1058,16 +1091,16 @@
               )}
 
               {user.role === '開票担当者' && (
-                <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 space-y-2.5 mt-3">
+                <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 space-y-2.5 mt-3">
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-emerald-300 text-xs flex items-center gap-1.5">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                    <span className="font-bold text-emerald-900 text-xs flex items-center gap-1.5">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                       開票・集計コントロール
                     </span>
                   </div>
                   <a
                     href="./tally.html"
-                    className="inline-flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs shadow-lg transition"
+                    className="inline-flex items-center justify-center gap-2 w-full px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl text-xs shadow-md transition"
                   >
                     開票・集計画面を開く (tally.html)
                   </a>
@@ -1075,49 +1108,47 @@
               )}
 
               {(user.role === '運営' || !user.role) && (
-                <div className="p-4 rounded-xl bg-indigo-500/10 border border-indigo-500/30 space-y-2.5 mt-3">
+                <div className="p-4 rounded-xl bg-indigo-50 border border-indigo-200 space-y-2.5 mt-3">
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-indigo-300 text-xs flex items-center gap-1.5">
-                      <User className="w-4 h-4 text-indigo-400" />
+                    <span className="font-bold text-indigo-900 text-xs flex items-center gap-1.5">
+                      <User className="w-4 h-4 text-indigo-600" />
                       受付・運営ダッシュボード
                     </span>
                   </div>
                   <a
                     href="./reception.html"
-                    className="inline-flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs shadow-lg transition"
+                    className="inline-flex items-center justify-center gap-2 w-full px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-xl text-xs shadow-md transition"
                   >
                     受付画面を開く (reception.html)
                   </a>
                 </div>
               )}
 
-              {/* セキュリティ状態ステータス */}
-              <div className="p-4 rounded-xl bg-indigo-950/30 border border-indigo-800/40 mt-4">
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 mt-4">
                 <div className="flex items-start gap-3">
-                  <ShieldCheck className="w-5 h-5 text-indigo-400 shrink-0 mt-0.5" />
+                  <ShieldCheck className="w-5 h-5 text-indigo-600 shrink-0 mt-0.5" />
                   <div className="text-xs">
-                    <span className="font-semibold text-indigo-200 block mb-0.5">
+                    <span className="font-bold text-slate-800 block mb-0.5">
                       アカウントの保護状態は良好です
                     </span>
-                    <span className="text-slate-400 leading-relaxed block">
+                    <span className="text-slate-500 font-bold leading-relaxed block">
                       パスワード暗号化やリアルタイム検証が正しく作動しています。
                     </span>
                   </div>
                 </div>
               </div>
 
-              {/* アクションボタン (ログアウト & アカウント削除) */}
-              <div className="pt-4 border-t border-slate-800 flex flex-col sm:flex-row gap-3">
+              <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row gap-3">
                 <button
                   onClick={onLogout}
-                  className="flex-1 flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium py-2.5 rounded-xl border border-slate-700 text-xs transition"
+                  className="flex-1 flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-xl border border-slate-300 text-xs transition"
                 >
                   <LogOut className="w-4 h-4" />
                   <span>ログアウト</span>
                 </button>
                 <button
                   onClick={onDeleteAccount}
-                  className="flex-1 flex items-center justify-center gap-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 font-medium py-2.5 rounded-xl border border-rose-500/30 text-xs transition"
+                  className="flex-1 flex items-center justify-center gap-2 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold py-2.5 rounded-xl border border-rose-200 text-xs transition"
                 >
                   <Trash2 className="w-4 h-4" />
                   <span>アカウント削除 (退会)</span>
