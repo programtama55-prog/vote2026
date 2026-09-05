@@ -307,90 +307,18 @@
                         </div>
                     </div>
 
-                    <div class="p-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-xs text-indigo-200/90 space-y-2">
-                        <div class="font-bold flex items-center gap-1.5 text-indigo-300">
-                            <i class="fa-solid fa-circle-info"></i> スタッフ利用のご案内
+                    <div class="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-200/90 space-y-2">
+                        <div class="font-bold flex items-center gap-1.5 text-amber-300">
+                            <i class="fa-solid fa-shield"></i> 管理者機能のご案内
                         </div>
                         <p class="text-[0.75rem] leading-relaxed">
                             新規スタッフの方は「サインアップ (新規登録)」タブからアカウントを作成してください。<br>
-                            管理者によって割り当てられた役職（運営・開票担当者・管理者）に応じて、利用可能な機能が自動制御されます。
+                            スタッフのアカウント一覧参照・役職権限割り当て・変更などの管理者機能はすべて **<a href="./admin.html" class="underline font-bold text-amber-300 hover:text-amber-200">管理者パネル (admin.html)</a>** に統合されました。
                         </p>
                     </div>
                 </div>
             </div>
         </div>
-
-        <!-- 管理者専用: スタッフアカウント＆役職管理セクション -->
-        <section id="manage-accounts" class="bg-slate-800 border border-slate-700/80 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-700/80 pb-5">
-                <div>
-                    <h2 class="text-lg font-bold text-white flex items-center gap-2">
-                        <i class="fa-solid fa-users-gear text-amber-400"></i> スタッフアカウント & 役職割当管理
-                    </h2>
-                    <p class="text-xs text-slate-400 mt-1">各スタッフアカウントに「運営」「開票担当者」「管理者」の役職を付与・変更できます。</p>
-                </div>
-                <div class="px-3 py-1.5 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 text-xs font-bold flex items-center gap-1.5">
-                    <i class="fa-solid fa-shield"></i> 管理者専用パネル
-                </div>
-            </div>
-
-            <!-- アカウント追加フォーム -->
-            <div class="bg-slate-900/60 border border-slate-700/60 rounded-2xl p-5">
-                <h3 class="text-sm font-bold text-slate-200 mb-3 flex items-center gap-2">
-                    <i class="fa-solid fa-user-plus text-indigo-400"></i> 新規スタッフアカウント作成 (役職付与)
-                </h3>
-                <form id="add-account-form" class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
-                    <div class="sm:col-span-3">
-                        <label for="new-username" class="block text-xs font-bold text-slate-400 mb-1">ユーザーID</label>
-                        <input type="text" id="new-username" required placeholder="例: s_tanaka"
-                               class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                    </div>
-                    <div class="sm:col-span-3">
-                        <label for="new-name" class="block text-xs font-bold text-slate-400 mb-1">表示名 (氏名)</label>
-                        <input type="text" id="new-name" required placeholder="例: 田中 太郎"
-                               class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                    </div>
-                    <div class="sm:col-span-3">
-                        <label for="new-role" class="block text-xs font-bold text-slate-400 mb-1">付与する役職</label>
-                        <select id="new-role" required
-                                class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 font-bold">
-                            <option value="運営">運営 (受付/ダッシュボード)</option>
-                            <option value="開票担当者">開票担当者 (集計作業)</option>
-                            <option value="管理者">管理者 (全機能+管理)</option>
-                        </select>
-                    </div>
-                    <div class="sm:col-span-3">
-                        <label for="new-password" class="block text-xs font-bold text-slate-400 mb-1">パスワード</label>
-                        <input type="password" id="new-password" required placeholder="••••••••"
-                               class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                    </div>
-                    <div class="sm:col-span-12 flex justify-end pt-2">
-                        <button type="submit" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl transition shadow flex items-center gap-2">
-                            <i class="fa-solid fa-plus"></i> アカウントを追加して役職を付与
-                        </button>
-                    </div>
-                </form>
-            </div>
-
-            <!-- アカウント一覧テーブル -->
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-xs border-collapse">
-                    <thead>
-                        <tr class="border-b border-slate-700 text-slate-400 font-bold uppercase">
-                            <th class="py-3 px-4">ユーザーID</th>
-                            <th class="py-3 px-4">氏名</th>
-                            <th class="py-3 px-4">現在の役職</th>
-                            <th class="py-3 px-4">役職変更</th>
-                            <th class="py-3 px-4 text-right">操作</th>
-                        </tr>
-                    </thead>
-                    <tbody id="accounts-table-body" class="divide-y divide-slate-700/60">
-                        <!-- JavaScriptで動的生成 -->
-                    </tbody>
-                </table>
-            </div>
-        </section>
-
     </main>
 
 
