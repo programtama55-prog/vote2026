@@ -501,17 +501,17 @@ export function renderAuthHeaderWidget(containerIdOrElement) {
   if (!user) {
     container.innerHTML = `
       <div class="flex items-center gap-2">
-        <div class="hidden sm:flex items-center gap-1.5 bg-slate-800/80 px-2.5 py-1.5 rounded-xl border border-slate-700/60 text-[0.7rem] font-bold text-slate-400" title="未ログイン状態">
-          <div class="w-6 h-6 rounded-lg bg-slate-700/80 text-slate-400 flex items-center justify-center shrink-0">
-            <i class="fa-solid fa-user-slash text-[0.65rem]"></i>
+        <div class="hidden sm:flex items-center gap-1.5 bg-slate-800 text-slate-300 px-2.5 py-1.5 rounded-xl border border-slate-700 text-[0.7rem] font-bold shadow-sm" title="未ログイン状態">
+          <div class="w-5 h-5 rounded-lg bg-slate-700 text-slate-400 flex items-center justify-center shrink-0">
+            <i class="fa-solid fa-user-slash text-[0.6rem]"></i>
           </div>
           <span>未ログイン</span>
         </div>
-        <a href="./login.html" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow transition flex items-center gap-1.5" title="スタッフログイン">
-          <i class="fa-solid fa-right-to-bracket"></i>
+        <a href="./login.html" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-md transition flex items-center gap-1.5" title="スタッフログイン">
+          <i class="fa-solid fa-right-to-bracket text-yellow-300"></i>
           <span>ログイン</span>
         </a>
-        <a href="./login.html?mode=signup" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow transition flex items-center gap-1.5" title="新規スタッフ登録">
+        <a href="./login.html?mode=signup" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md transition flex items-center gap-1.5" title="新規スタッフ登録">
           <i class="fa-solid fa-user-plus"></i>
           <span class="hidden sm:inline">サインアップ</span>
         </a>
@@ -524,17 +524,17 @@ export function renderAuthHeaderWidget(containerIdOrElement) {
   let pageLinks = '';
   if (user.role === ROLES.UNEI || user.role === ROLES.ADMIN) {
     pageLinks += `
-      <a href="./reception.html" class="px-2.5 py-1.5 rounded-lg text-xs font-bold hover:bg-slate-700/50 transition flex items-center gap-1.5 text-slate-300 hover:text-white" title="受付管理">
+      <a href="./reception.html" class="px-2 py-1.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-100 border border-slate-700 transition flex items-center gap-1 shadow-sm" title="受付管理">
         <i class="fa-solid fa-id-card text-sky-400"></i><span class="hidden sm:inline">受付</span>
       </a>
-      <a href="./dashboard.html" class="px-2.5 py-1.5 rounded-lg text-xs font-bold hover:bg-slate-700/50 transition flex items-center gap-1.5 text-slate-300 hover:text-white" title="運営ダッシュボード">
+      <a href="./dashboard.html" class="px-2 py-1.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-100 border border-slate-700 transition flex items-center gap-1 shadow-sm" title="運営ダッシュボード">
         <i class="fa-solid fa-chart-line text-indigo-400"></i><span class="hidden sm:inline">ダッシュボード</span>
       </a>
     `;
   }
   if (user.role === ROLES.KAIHYO || user.role === ROLES.ADMIN) {
     pageLinks += `
-      <a href="./tally.html" class="px-2.5 py-1.5 rounded-lg text-xs font-bold hover:bg-slate-700/50 transition flex items-center gap-1.5 text-slate-300 hover:text-white" title="開票・集計">
+      <a href="./tally.html" class="px-2 py-1.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-100 border border-slate-700 transition flex items-center gap-1 shadow-sm" title="開票・集計">
         <i class="fa-solid fa-calculator text-emerald-400"></i><span class="hidden sm:inline">開票</span>
       </a>
     `;
@@ -542,41 +542,41 @@ export function renderAuthHeaderWidget(containerIdOrElement) {
   
   if (user.role === ROLES.ADMIN) {
     pageLinks += `
-      <a href="./admin.html" class="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 transition flex items-center gap-1.5" title="管理者パネル (管理者専用)">
+      <a href="./admin.html" class="px-2 py-1.5 rounded-xl text-xs font-bold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 transition flex items-center gap-1 shadow-sm" title="管理者パネル (管理者専用)">
         <i class="fa-solid fa-user-shield text-amber-400"></i><span class="hidden sm:inline">管理者パネル</span>
       </a>
     `;
   }
 
   container.innerHTML = `
-    <div class="flex items-center gap-2.5">
+    <div class="flex items-center gap-2">
       <!-- ページ切り替えナビ -->
-      ${pageLinks ? `<div class="flex items-center gap-1 border-r border-slate-700/60 pr-2.5 mr-0.5">${pageLinks}</div>` : ''}
+      ${pageLinks ? `<div class="flex items-center gap-1 border-r border-slate-300 dark:border-slate-700 pr-2 mr-0.5">${pageLinks}</div>` : ''}
 
-      <!-- ログインステータス アイコンマーク & プロフィール -->
-      <div class="flex items-center gap-2 bg-slate-800/90 hover:bg-slate-800 px-3 py-1.5 rounded-2xl border border-emerald-500/40 shadow-lg shadow-emerald-500/5 transition-all">
-        <!-- アバターアイコンマーク (パルス発光グリーンバッジ付き) -->
-        <div class="relative flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md font-bold text-sm shrink-0" title="ログイン中: ${escapeHtml(user.name)}">
+      <!-- ログインステータス アイコンマーク & プロフィールカード -->
+      <div class="flex items-center gap-2.5 bg-slate-900 text-white px-3 py-1.5 rounded-2xl border-2 border-emerald-400/80 shadow-xl transition-all">
+        <!-- アバターアイコンマーク (パルス発光グリーンオンラインドット付き) -->
+        <div class="relative flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow font-bold text-sm shrink-0" title="ログイン中: ${escapeHtml(user.name)}">
           <i class="fa-solid fa-user-check"></i>
-          <!-- オンラインインジケーター -->
-          <span class="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-400 border-2 border-slate-900 shadow">
-            <span class="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-75"></span>
+          <!-- オンライン点滅ドット -->
+          <span class="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-400 border-2 border-slate-900 shadow">
+            <span class="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-80"></span>
           </span>
         </div>
 
-        <!-- ユーザー情報 & ログイン中表示 -->
+        <!-- ユーザー名 & ログイン中バッジ -->
         <div class="text-left leading-tight">
           <div class="text-xs font-bold text-white flex items-center gap-1.5">
             <span>${escapeHtml(user.name)}</span>
-            <span class="text-[0.6rem] px-1.5 py-0.2 bg-emerald-500/20 text-emerald-300 font-extrabold rounded-md border border-emerald-500/30">ログイン中</span>
+            <span class="text-[0.6rem] px-1.5 py-0.2 bg-emerald-500/30 text-emerald-300 font-black rounded border border-emerald-400/40">ログイン中</span>
           </div>
           <div class="mt-0.5">${getRoleBadgeHtml(user.role)}</div>
         </div>
       </div>
 
       <!-- ログアウトボタン -->
-      <button id="auth-logout-btn" class="px-3 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-rose-600/20 text-slate-300 hover:text-rose-400 border border-slate-700/60 hover:border-rose-500/40 transition flex items-center gap-1.5" title="ログアウト">
-        <i class="fa-solid fa-right-from-bracket"></i>
+      <button id="auth-logout-btn" class="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-rose-600/30 text-slate-200 hover:text-rose-300 border border-slate-700 transition flex items-center gap-1 shadow-sm" title="ログアウト">
+        <i class="fa-solid fa-right-from-bracket text-rose-400"></i>
         <span class="hidden sm:inline">ログアウト</span>
       </button>
     </div>

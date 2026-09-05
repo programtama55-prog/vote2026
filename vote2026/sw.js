@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kodomo-senkyo-v4';
+const CACHE_NAME = 'kodomo-senkyo-v5';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
