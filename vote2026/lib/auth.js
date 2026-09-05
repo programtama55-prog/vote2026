@@ -487,7 +487,7 @@ export function getRoleBadgeHtml(role) {
 }
 
 /**
- * 共通ヘッダーにユーザー情報・役職バッジ・ナビゲーション・ログアウトボタンを描画
+ * 共通ヘッダーにユーザー情報・ログイン状態アイコンマーク・役職バッジ・ナビゲーション・ログアウトボタンを描画
  * @param {string|HTMLElement} containerIdOrElement 
  */
 export function renderAuthHeaderWidget(containerIdOrElement) {
@@ -501,13 +501,19 @@ export function renderAuthHeaderWidget(containerIdOrElement) {
   if (!user) {
     container.innerHTML = `
       <div class="flex items-center gap-2">
+        <div class="hidden sm:flex items-center gap-1.5 bg-slate-800/80 px-2.5 py-1.5 rounded-xl border border-slate-700/60 text-[0.7rem] font-bold text-slate-400" title="未ログイン状態">
+          <div class="w-6 h-6 rounded-lg bg-slate-700/80 text-slate-400 flex items-center justify-center shrink-0">
+            <i class="fa-solid fa-user-slash text-[0.65rem]"></i>
+          </div>
+          <span>未ログイン</span>
+        </div>
         <a href="./login.html" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow transition flex items-center gap-1.5" title="スタッフログイン">
           <i class="fa-solid fa-right-to-bracket"></i>
           <span>ログイン</span>
         </a>
         <a href="./login.html?mode=signup" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow transition flex items-center gap-1.5" title="新規スタッフ登録">
           <i class="fa-solid fa-user-plus"></i>
-          <span>サインアップ</span>
+          <span class="hidden sm:inline">サインアップ</span>
         </a>
       </div>
     `;
@@ -543,17 +549,26 @@ export function renderAuthHeaderWidget(containerIdOrElement) {
   }
 
   container.innerHTML = `
-    <div class="flex items-center gap-3">
+    <div class="flex items-center gap-2.5">
       <!-- ページ切り替えナビ -->
-      <div class="flex items-center gap-1 border-r border-slate-700/60 pr-3 mr-1">
-        ${pageLinks}
-      </div>
+      ${pageLinks ? `<div class="flex items-center gap-1 border-r border-slate-700/60 pr-2.5 mr-0.5">${pageLinks}</div>` : ''}
 
-      <!-- ユーザープロフィール & 役職バッジ -->
-      <div class="flex items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700/60 shadow-sm">
-        <div class="text-left">
-          <div class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+      <!-- ログインステータス アイコンマーク & プロフィール -->
+      <div class="flex items-center gap-2 bg-slate-800/90 hover:bg-slate-800 px-3 py-1.5 rounded-2xl border border-emerald-500/40 shadow-lg shadow-emerald-500/5 transition-all">
+        <!-- アバターアイコンマーク (パルス発光グリーンバッジ付き) -->
+        <div class="relative flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md font-bold text-sm shrink-0" title="ログイン中: ${escapeHtml(user.name)}">
+          <i class="fa-solid fa-user-check"></i>
+          <!-- オンラインインジケーター -->
+          <span class="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-400 border-2 border-slate-900 shadow">
+            <span class="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-75"></span>
+          </span>
+        </div>
+
+        <!-- ユーザー情報 & ログイン中表示 -->
+        <div class="text-left leading-tight">
+          <div class="text-xs font-bold text-white flex items-center gap-1.5">
             <span>${escapeHtml(user.name)}</span>
+            <span class="text-[0.6rem] px-1.5 py-0.2 bg-emerald-500/20 text-emerald-300 font-extrabold rounded-md border border-emerald-500/30">ログイン中</span>
           </div>
           <div class="mt-0.5">${getRoleBadgeHtml(user.role)}</div>
         </div>
