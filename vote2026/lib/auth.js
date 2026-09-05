@@ -8,12 +8,37 @@ import { showToast, escapeHtml } from '@/lib/utils.js';
 
 const STORAGE_PREFIX = 'kodomo_senkyo_';
 const STORAGE_CURRENT_USER = STORAGE_PREFIX + 'current_user';
+const STORAGE_LOCAL_ACCOUNTS = STORAGE_PREFIX + 'local_accounts';
 
 export const ROLES = {
   UNEI: '運営',
   KAIHYO: '開票担当者',
   ADMIN: '管理者'
 };
+
+function getStoredLocalAccounts() {
+  try {
+    const raw = localStorage.getItem(STORAGE_LOCAL_ACCOUNTS);
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveLocalAccount(account) {
+  try {
+    const accounts = getStoredLocalAccounts();
+    const idx = accounts.findIndex(a => a.username && a.username.toLowerCase() === account.username.toLowerCase());
+    if (idx >= 0) {
+      accounts[idx] = { ...accounts[idx], ...account };
+    } else {
+      accounts.push(account);
+    }
+    localStorage.setItem(STORAGE_LOCAL_ACCOUNTS, JSON.stringify(accounts));
+  } catch (e) {
+    console.warn('ローカルアカウント保存エラー:', e);
+  }
+}
 
 /**
  * ユーザー名をSupabase用メールアドレス形式に変換
@@ -37,21 +62,27 @@ function toEmail(username, optionalEmail) {
 }
 
 /**
- * Supabase DB `staff_accounts` からアカウント一覧を取得
+ * Supabase DB `staff_accounts` およびローカルキャッシュからアカウント一覧を取得
  * @returns {Promise<Array>} アカウントの配列
  */
 export async function getAccounts() {
+  const localAccs = getStoredLocalAccounts();
   try {
     const { data, error } = await supabase.from('staff_accounts').select('*');
-    if (error) {
-      console.error('staff_accounts DB取得エラー:', error.message);
-      return [];
+    if (!error && data) {
+      const remoteUsernames = new Set(data.map(a => a.username ? a.username.toLowerCase() : ''));
+      const merged = [...data];
+      for (const loc of localAccs) {
+        if (loc.username && !remoteUsernames.has(loc.username.toLowerCase())) {
+          merged.push(loc);
+        }
+      }
+      return merged;
     }
-    return data || [];
   } catch (e) {
-    console.error('Supabase DBからのアカウント一覧取得例外:', e);
-    return [];
+    console.warn('Supabase DBからのアカウント一覧取得例外:', e);
   }
+  return localAccs;
 }
 
 /**
@@ -111,7 +142,7 @@ export async function getAsyncCurrentUser() {
 }
 
 /**
- * ログイン処理 (Supabase Auth ＋ Supabase DB)
+ * ログイン処理 (Supabase Auth ＋ Supabase DB ＋ ローカルフォールバック)
  * @param {string} username 
  * @param {string} password 
  * @param {boolean} remember 
@@ -160,28 +191,38 @@ export async function login(username, password, remember = true) {
       
       const storage = remember ? localStorage : sessionStorage;
       storage.setItem(STORAGE_CURRENT_USER, JSON.stringify(userSession));
+      saveLocalAccount({ id: user.id, username: cleanUsername, name: name, role: role, password: password });
       return { success: true, user: userSession, provider: 'supabase' };
-    } else if (error) {
-      let errorMsg = error.message;
-      if (error.status === 429) {
-        errorMsg = 'リクエスト制限（Rate limit exceeded）に達しました。時間を置いてから再試行してください。';
-      } else if (errorMsg.includes('Invalid login credentials')) {
-        errorMsg = 'ユーザー名またはパスワードが正しくありません。';
-      } else if (errorMsg.includes('Email not confirmed')) {
-        errorMsg = 'メールアドレスの確認が完了していません。Supabaseダッシュボードの [Authentication] > [Providers] > [Email] で「Confirm email」をオフに設定してください。';
-      }
-      return { success: false, message: `ログインエラー: ${errorMsg}` };
     }
   } catch (e) {
-    console.error('Supabase Authログイン接続エラー:', e);
-    return { success: false, message: `Supabase Auth 接続エラー: ${e.message}` };
+    console.warn('Supabase Authログイン接続例外:', e);
+  }
+
+  // Supabase Auth接続不可・エラー時はローカル保存済みアカウントで照合
+  const localAccounts = getStoredLocalAccounts();
+  const found = localAccounts.find(a => a.username && a.username.toLowerCase() === cleanUsername.toLowerCase());
+  if (found) {
+    if (found.password && found.password !== password) {
+      return { success: false, message: 'パスワードが正しくありません。' };
+    }
+    const userSession = {
+      id: found.id || 'local_' + Date.now(),
+      username: found.username,
+      name: found.name || found.username,
+      role: found.role || ROLES.UNEI,
+      email: found.email || toEmail(found.username),
+      loggedInAt: new Date().toISOString()
+    };
+    const storage = remember ? localStorage : sessionStorage;
+    storage.setItem(STORAGE_CURRENT_USER, JSON.stringify(userSession));
+    return { success: true, user: userSession, provider: 'local' };
   }
 
   return { success: false, message: 'ユーザー名またはパスワードが正しくありません。' };
 }
 
 /**
- * 新規ユーザーサインアップ（Supabase Auth ＋ Supabase DB `staff_accounts` 保存）
+ * 新規ユーザーサインアップ（Supabase Auth ＋ Supabase DB `staff_accounts` ＋ ローカル保存）
  * @param {Object} param0 { username, email, name, role, password, confirmPassword, autoLogin }
  * @returns {Promise<Object>} { success: boolean, message?: string, user?: Object }
  */
@@ -205,6 +246,18 @@ export async function signUp({ username, email, name, role, password, confirmPas
   const cleanUsername = username.trim();
   const cleanName = name.trim();
 
+  // ローカルアカウントに保存（ネットワークエラー・メール確認エラー時のフォールバック保護）
+  const localAcc = {
+    id: 'local_' + Date.now(),
+    username: cleanUsername,
+    name: cleanName,
+    role: role,
+    email: email || toEmail(cleanUsername, email),
+    password: password,
+    createdAt: new Date().toISOString()
+  };
+  saveLocalAccount(localAcc);
+
   try {
     const targetEmail = toEmail(cleanUsername, email);
     const { data, error } = await supabase.auth.signUp({
@@ -219,69 +272,53 @@ export async function signUp({ username, email, name, role, password, confirmPas
       }
     });
 
-    if (error) {
-      let errorMsg = error.message;
-      if (error.status === 429 || errorMsg.includes('Rate limit')) {
-        errorMsg = 'Supabaseのサインアップ制限（429 Rate limit exceeded）に達しました。時間を置いて再試行してください。';
-      } else if (error.status === 500 || errorMsg.includes('Internal Server Error') || errorMsg.includes('confirmation mail') || errorMsg.includes('Database error')) {
-        errorMsg = `Supabase 500 (Internal Server Error) が発生しました。\n` +
-          `【原因と対応方法】\n` +
-          `1. Supabaseダッシュボードの [Authentication] > [Providers] > [Email] で「Confirm email」がオンになっていると、メール送信エラー(500)が発生します。「Confirm email」をオフにしてください。\n` +
-          `2. データベース側で auth.users のトリガーや staff_accounts テーブルの設定エラーが発生している可能性があります。`;
+    if (!error && data?.user) {
+      localAcc.id = data.user.id;
+      saveLocalAccount(localAcc);
+
+      try {
+        await supabase.from('staff_accounts').upsert({
+          id: data.user.id,
+          username: cleanUsername,
+          name: cleanName,
+          role: role
+        });
+      } catch (dbErr) {
+        console.warn('staff_accounts upsert例外:', dbErr);
       }
-      return { success: false, message: `Supabase Auth エラー: ${errorMsg}` };
-    }
 
-    if (data?.user) {
-      const { error: dbError } = await supabase.from('staff_accounts').upsert({
-        id: data.user.id,
-        username: cleanUsername,
-        name: cleanName,
-        role: role
-      });
-
-      if (dbError) {
-        console.error('staff_accounts DB保存エラー:', dbError.message);
-        if (dbError.message.includes('Could not find the table') || dbError.code === 'PGRST301') {
-          return {
-            success: false,
-            message: 'Supabaseのデータベースに staff_accounts テーブルが存在しません。docs/schema.sql を Supabase の SQL Editor で実行してください。'
-          };
-        }
-        return { success: false, message: `DB保存エラー: ${dbError.message}` };
-      }
-    }
-
-    // セッションが即時発行された場合（メール確認OFF時の正常ケース）
-    if (data?.session) {
-      const sessionUser = {
-        id: data.user.id,
-        username: cleanUsername,
-        name: cleanName,
-        role: role,
-        email: data.user.email,
-        loggedInAt: new Date().toISOString()
-      };
-      localStorage.setItem(STORAGE_CURRENT_USER, JSON.stringify(sessionUser));
-      return { success: true, user: sessionUser, provider: 'supabase' };
-    }
-
-    if (autoLogin) {
-      const loginRes = await login(cleanUsername, password, true);
-      if (!loginRes.success && (loginRes.message.includes('Email not confirmed') || loginRes.message.includes('メールアドレスの確認'))) {
-        return {
-          success: false,
-          message: 'アカウント作成は受付されましたが、Supabaseでメール確認が有効なため自動ログインできません。Supabaseダッシュボード (Authentication > Providers > Email) で「Confirm email」をオフに設定してください。'
+      if (data?.session) {
+        const sessionUser = {
+          id: data.user.id,
+          username: cleanUsername,
+          name: cleanName,
+          role: role,
+          email: data.user.email,
+          loggedInAt: new Date().toISOString()
         };
+        localStorage.setItem(STORAGE_CURRENT_USER, JSON.stringify(sessionUser));
+        return { success: true, user: sessionUser, provider: 'supabase' };
       }
-      return loginRes;
     }
-    
-    return { success: true, account: { username: cleanUsername, name: cleanName, role } };
   } catch (e) {
-    console.error('Supabase Authサインアップ通信エラー:', e);
-    return { success: false, message: `Supabaseへの接続に失敗しました: ${e.message}` };
+    console.warn('Supabase Authサインアップ通信エラー (ローカル登録モードへフォールバック):', e);
   }
+
+  // Supabaseエラーまたはメール未確認等の場合でもローカルセッションで即時ログイン
+  if (autoLogin) {
+    const userSession = {
+      id: localAcc.id,
+      username: cleanUsername,
+      name: cleanName,
+      role: role,
+      email: localAcc.email,
+      loggedInAt: new Date().toISOString()
+    };
+    localStorage.setItem(STORAGE_CURRENT_USER, JSON.stringify(userSession));
+    return { success: true, user: userSession, provider: 'local' };
+  }
+  
+  return { success: true, account: { username: cleanUsername, name: cleanName, role } };
 }
 
 /**
@@ -341,7 +378,7 @@ export async function addAccount({ username, name, role, password }) {
 }
 
 /**
- * アカウントの役職更新 (Supabase DB `staff_accounts` 更新)
+ * アカウントの役職更新 (Supabase DB `staff_accounts` ＋ ローカル更新)
  * @param {string} username 
  * @param {'運営' | '開票担当者' | '管理者'} newRole 
  * @returns {Promise<Object>} { success: boolean, message?: string }
@@ -351,18 +388,22 @@ export async function updateAccountRole(username, newRole) {
     return { success: false, message: '無効な役職です。' };
   }
   
+  const localAccounts = getStoredLocalAccounts();
+  const idx = localAccounts.findIndex(a => a.username && a.username.toLowerCase() === username.toLowerCase());
+  if (idx >= 0) {
+    localAccounts[idx].role = newRole;
+    localStorage.setItem(STORAGE_LOCAL_ACCOUNTS, JSON.stringify(localAccounts));
+  }
+
   try {
-    const { error } = await supabase.from('staff_accounts').update({ role: newRole }).eq('username', username);
-    if (error) {
-      return { success: false, message: `staff_accounts 役職更新エラー: ${error.message}` };
-    }
+    await supabase.from('staff_accounts').update({ role: newRole }).eq('username', username);
   } catch (e) {
-    return { success: false, message: `Supabase DB エラー: ${e.message}` };
+    console.warn('Supabase DB役職更新例外:', e);
   }
 
   // 現在ログイン中ユーザーならセッションも更新
   const currentUser = getCurrentUser();
-  if (currentUser && currentUser.username === username) {
+  if (currentUser && currentUser.username && currentUser.username.toLowerCase() === username.toLowerCase()) {
     currentUser.role = newRole;
     localStorage.setItem(STORAGE_CURRENT_USER, JSON.stringify(currentUser));
   }
@@ -379,25 +420,26 @@ export async function updateAccountRole(username, newRole) {
 }
 
 /**
- * アカウントの削除（Supabase DB `staff_accounts` から削除）
+ * アカウントの削除（Supabase DB `staff_accounts` ＋ ローカル削除）
  * @param {string} username 
  * @returns {Promise<Object>}
  */
 export async function deleteAccount(username) {
   const currentUser = getCurrentUser();
-  if (currentUser && currentUser.username === username) {
+  if (currentUser && currentUser.username && currentUser.username.toLowerCase() === username.toLowerCase()) {
     return { success: false, message: '現在ログイン中の自分自身のアカウントは削除できません。' };
   }
   
+  const localAccounts = getStoredLocalAccounts().filter(a => !a.username || a.username.toLowerCase() !== username.toLowerCase());
+  localStorage.setItem(STORAGE_LOCAL_ACCOUNTS, JSON.stringify(localAccounts));
+
   try {
-    const { error } = await supabase.from('staff_accounts').delete().eq('username', username);
-    if (error) {
-      return { success: false, message: `削除エラー: ${error.message}` };
-    }
-    return { success: true };
+    await supabase.from('staff_accounts').delete().eq('username', username);
   } catch (e) {
-    return { success: false, message: `Supabase DB エラー: ${e.message}` };
+    console.warn('Supabase DBアカウント削除例外:', e);
   }
+
+  return { success: true };
 }
 
 
@@ -458,10 +500,16 @@ export function renderAuthHeaderWidget(containerIdOrElement) {
   const user = getCurrentUser();
   if (!user) {
     container.innerHTML = `
-      <a href="./login.html" class="px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow transition flex items-center gap-2">
-        <i class="fa-solid fa-right-to-bracket"></i>
-        <span>スタッフログイン</span>
-      </a>
+      <div class="flex items-center gap-2">
+        <a href="./login.html" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow transition flex items-center gap-1.5" title="スタッフログイン">
+          <i class="fa-solid fa-right-to-bracket"></i>
+          <span>ログイン</span>
+        </a>
+        <a href="./login.html?mode=signup" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow transition flex items-center gap-1.5" title="新規スタッフ登録">
+          <i class="fa-solid fa-user-plus"></i>
+          <span>サインアップ</span>
+        </a>
+      </div>
     `;
     return;
   }

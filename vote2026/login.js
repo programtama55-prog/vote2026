@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderAccountsTable();
 });
 
-// URLパラメータに基づく通知アラートの制御
+// URLパラメータ・ハッシュに基づく通知アラートおよびタブ切り替え制御
 function checkUrlParams() {
   const urlParams = new URLSearchParams(window.location.search);
   const reason = urlParams.get('reason');
@@ -35,7 +35,7 @@ function checkUrlParams() {
   const alertTitle = document.getElementById('alert-title');
   const alertMsg = document.getElementById('alert-message');
 
-  if (mode === 'signup') {
+  if (mode === 'signup' || window.location.hash === '#signup') {
     switchFormTab('signup');
   }
 
